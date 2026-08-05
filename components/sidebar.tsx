@@ -8,7 +8,6 @@ import {
   ChevronLeft,
   Search,
   Star,
-  Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { navSections, settingsItem } from "@/lib/navigation";
@@ -20,6 +19,14 @@ export function Sidebar() {
   const [search, setSearch] = React.useState("");
   const [favorites, setFavorites] = React.useState<string[]>(["", "/employees"]);
   const [recent, setRecent] = React.useState<string[]>(["/payroll", "/leave"]);
+  const [prevPathname, setPrevPathname] = React.useState(pathname);
+
+  if (prevPathname !== pathname) {
+    setPrevPathname(pathname);
+    if (pathname && !recent.includes(pathname) && pathname !== "/") {
+      setRecent((r) => [pathname, ...r].slice(0, 4));
+    }
+  }
 
   const filtered = React.useMemo(() => {
     if (!search.trim()) return navSections;
@@ -33,13 +40,6 @@ export function Sidebar() {
       }))
       .filter((s) => s.items.length > 0);
   }, [search]);
-
-  React.useEffect(() => {
-    if (pathname && !recent.includes(pathname) && pathname !== "/") {
-      setRecent((r) => [pathname, ...r].slice(0, 4));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname]);
 
   const toggleFavorite = (href: string) => {
     setFavorites((f) =>

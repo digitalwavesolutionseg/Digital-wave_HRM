@@ -12,29 +12,39 @@ interface ThemeContextValue {
 
 const ThemeContext = React.createContext<ThemeContextValue | undefined>(undefined);
 
+const THEME_EVENT = "dw-theme-change";
+
+const subscribe = (onStoreChange: () => void) => {
+  window.addEventListener(THEME_EVENT, onStoreChange);
+  return () => window.removeEventListener(THEME_EVENT, onStoreChange);
+};
+
+const getSnapshot = (): Theme => {
+  return (localStorage.getItem("dw-theme") as Theme) ?? "light";
+};
+
+const getServerSnapshot = (): Theme => "light";
+
+const applyTheme = (theme: Theme) => {
+  document.documentElement.classList.toggle("dark", theme === "dark");
+};
+
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = React.useState<Theme>("light");
+  const theme = React.useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
-  React.useEffect(() => {
-    const stored = localStorage.getItem("dw-theme") as Theme | null;
-    const initial = stored ?? "light";
-    setTheme(initial);
-    document.documentElement.classList.toggle("dark", initial === "dark");
-  }, []);
-
-  const setAndPersist = React.useCallback((t: Theme) => {
-    setTheme(t);
+  const setTheme = React.useCallback((t: Theme) => {
     localStorage.setItem("dw-theme", t);
-    document.documentElement.classList.toggle("dark", t === "dark");
+    applyTheme(t);
+    window.dispatchEvent(new Event(THEME_EVENT));
   }, []);
 
   const value = React.useMemo<ThemeContextValue>(
     () => ({
       theme,
-      setTheme: setAndPersist,
-      toggleTheme: () => setAndPersist(theme === "light" ? "dark" : "light"),
+      setTheme,
+      toggleTheme: () => setTheme(theme === "light" ? "dark" : "light"),
     }),
-    [theme, setAndPersist]
+    [theme, setTheme]
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
