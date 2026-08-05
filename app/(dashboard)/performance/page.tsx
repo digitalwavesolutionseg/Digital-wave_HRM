@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar } from "@/components/ui/avatar";
 import { DataTable } from "@/components/ui/data-table";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { cn } from "@/lib/utils";
 
@@ -31,27 +33,47 @@ interface EmployeeGoal {
   progress: number;
 }
 
-const reviews: Review[] = [
-  { id: "PRV-114", employee: "Sarah Chen", role: "Senior Frontend Engineer", period: "Q2 2026", rating: 4.5, reviewer: "Daniela Ruiz", status: "COMPLETED" },
-  { id: "PRV-113", employee: "James Okafor", role: "Product Manager", period: "Q2 2026", rating: 4.3, reviewer: "Amara Okafor", status: "COMPLETED" },
-  { id: "PRV-112", employee: "Priya Sharma", role: "Data Scientist", period: "Q2 2026", rating: 4.7, reviewer: "Andre Souza", status: "SUBMITTED" },
-  { id: "PRV-111", employee: "Marcus Webb", role: "Sales Lead", period: "Q2 2026", rating: 3.9, reviewer: "Daniela Ruiz", status: "SUBMITTED" },
-  { id: "PRV-110", employee: "Elena Petrova", role: "UX Designer", period: "Q2 2026", rating: 4.1, reviewer: "Helen Grant", status: "COMPLETED" },
-  { id: "PRV-109", employee: "David Kim", role: "DevOps Engineer", period: "Q2 2026", rating: 4.4, reviewer: "Kevin Osei", status: "DRAFT" },
-  { id: "PRV-108", employee: "Aisha Bello", role: "HR Business Partner", period: "Q1 2026", rating: 4.2, reviewer: "Amara Okafor", status: "COMPLETED" },
-  { id: "PRV-107", employee: "Tomás Herrera", role: "Accountant", period: "Q1 2026", rating: 3.8, reviewer: "Nina Petrov", status: "SUBMITTED" },
-  { id: "PRV-106", employee: "Lena Fischer", role: "Marketing Manager", period: "Q1 2026", rating: 4.0, reviewer: "Helen Grant", status: "COMPLETED" },
-  { id: "PRV-105", employee: "Ryan Patel", role: "Backend Engineer", period: "Q1 2026", rating: 4.6, reviewer: "Kevin Osei", status: "DRAFT" },
-];
+interface ReviewApiItem {
+  id: string;
+  period: string;
+  rating: number | string | null;
+  status: ReviewStatus;
+  employee: { employeeId: string; user: { firstName: string; lastName: string } | null } | null;
+  reviewer: { employeeId: string; user: { firstName: string; lastName: string } | null } | null;
+}
 
-const goals: EmployeeGoal[] = [
-  { id: "G-01", employee: "Priya Sharma", goal: "Complete ML model deployment to production", progress: 90 },
-  { id: "G-02", employee: "Sarah Chen", goal: "Ship Q3 platform redesign", progress: 72 },
-  { id: "G-03", employee: "Marcus Webb", goal: "Exceed Q3 revenue target by 12%", progress: 81 },
-  { id: "G-04", employee: "James Okafor", goal: "Launch mobile app v2 on time", progress: 45 },
-  { id: "G-05", employee: "David Kim", goal: "Reduce CI pipeline time by 40%", progress: 38 },
-  { id: "G-06", employee: "Elena Petrova", goal: "Deliver new design system to all squads", progress: 64 },
-];
+interface GoalApiItem {
+  id: string;
+  title: string;
+  description: string;
+  progress: number | string;
+  employee: { employeeId: string; user: { firstName: string; lastName: string } | null } | null;
+}
+
+function personName(p: { employeeId: string; user: { firstName: string; lastName: string } | null } | null) {
+  return p?.user ? `${p.user.firstName} ${p.user.lastName}` : p?.employeeId ?? "—";
+}
+
+function mapReview(item: ReviewApiItem): Review {
+  return {
+    id: item.id,
+    employee: personName(item.employee),
+    role: "—",
+    period: item.period,
+    rating: Number(item.rating ?? 0),
+    reviewer: personName(item.reviewer),
+    status: item.status,
+  };
+}
+
+function mapGoal(item: GoalApiItem): EmployeeGoal {
+  return {
+    id: item.id,
+    employee: personName(item.employee),
+    goal: item.title,
+    progress: Number(item.progress ?? 0),
+  };
+}
 
 function ReviewStatusBadge({ status }: { status: ReviewStatus }) {
   const map: Record<ReviewStatus, { label: string; variant: "muted" | "info" | "success" }> = {
@@ -84,6 +106,35 @@ function RatingStars({ rating }: { rating: number }) {
 }
 
 export default function PerformancePage() {
+  const [reviews, setReviews] = React.useState<Review[]>([]);
+  const [goals, setGoals] = React.useState<EmployeeGoal[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState(false);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { api } = await import("@/lib/api");
+        const [reviewsRes, goalsRes] = await Promise.all([
+          api.get<ReviewApiItem[]>("/performance/reviews"),
+          api.get<GoalApiItem[]>("/performance/goals"),
+        ]);
+        if (cancelled) return;
+        setReviews(reviewsRes.map(mapReview));
+        setGoals(goalsRes.map(mapGoal));
+        setError(false);
+      } catch {
+        if (!cancelled) setError(true);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const columns = React.useMemo<ColumnDef<Review>[]>(
     () => [
       {
@@ -138,6 +189,11 @@ export default function PerformancePage() {
   );
 
   const onTrack = goals.filter((g) => g.progress >= 60).length;
+  const avgRating = reviews.length
+    ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1)
+    : "0.0";
+  const reviewsDue = reviews.filter((r) => r.status === "DRAFT").length;
+  const completed = reviews.filter((r) => r.status === "COMPLETED").length;
 
   return (
     <div className="mx-auto max-w-[1400px] space-y-6 animate-fade-up">
@@ -158,30 +214,30 @@ export default function PerformancePage() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           title="Avg Rating"
-          value="4.2"
-          delta="+0.3"
+          value={avgRating}
+          delta=""
           icon={<Star className="h-5 w-5" />}
           iconClassName="bg-warning/10 text-warning"
         />
         <StatCard
           title="Reviews Due"
-          value="12"
-          delta="-5"
+          value={String(reviewsDue)}
+          delta=""
           changeType="down"
           icon={<Clock className="h-5 w-5" />}
           iconClassName="bg-info/10 text-info"
         />
         <StatCard
           title="Goals On Track"
-          value={`${Math.round((onTrack / goals.length) * 100)}%`}
-          delta="+6%"
+          value={`${goals.length ? Math.round((onTrack / goals.length) * 100) : 0}%`}
+          delta=""
           icon={<Target className="h-5 w-5" />}
           iconClassName="bg-primary/10 text-primary"
         />
         <StatCard
           title="Completed"
-          value="148"
-          delta="+21"
+          value={String(completed)}
+          delta=""
           icon={<CheckCircle2 className="h-5 w-5" />}
           iconClassName="bg-success/10 text-success"
         />
@@ -192,7 +248,21 @@ export default function PerformancePage() {
           <h2 className="text-lg font-semibold">Review Cycles</h2>
           <p className="text-sm text-muted-foreground">Latest submitted and completed reviews</p>
         </div>
-        <DataTable columns={columns} data={reviews} pagination />
+        {loading ? (
+          <div className="space-y-3 rounded-2xl border border-border bg-card p-4">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+        ) : error ? (
+          <EmptyState
+            title="Unable to load performance data"
+            description="Check that the backend API is reachable and you are signed in."
+          />
+        ) : (
+          <DataTable columns={columns} data={reviews} pagination />
+        )}
       </div>
 
       <Card>

@@ -1,3 +1,6 @@
+"use client";
+
+import * as React from "react";
 import {
   Megaphone,
   Plus,
@@ -6,13 +9,19 @@ import {
   ScrollText,
   Info,
   Clock,
+  Briefcase,
+  Wallet,
+  GraduationCap,
 } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar } from "@/components/ui/avatar";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
+import { formatDateTime } from "@/lib/utils";
 
-type Category = "EVENT" | "POLICY" | "NOTICE";
+type Category = "EVENT" | "POLICY" | "NOTICE" | "HR" | "PAYROLL" | "TRAINING" | "GENERAL";
 
 type Announcement = {
   id: string;
@@ -24,68 +33,68 @@ type Announcement = {
   pinned?: boolean;
 };
 
+interface AnnouncementApiItem {
+  id: string;
+  title: string;
+  body: string;
+  category: Category;
+  pinned: boolean;
+  author: { firstName: string; lastName: string } | null;
+  createdAt: string;
+}
+
 const categoryMeta: Record<
   Category,
-  { variant: "default" | "secondary" | "warning" | "info"; icon: React.ReactNode }
+  { variant: "default" | "secondary" | "warning" | "info" | "success"; icon: React.ReactNode }
 > = {
   EVENT: { variant: "default", icon: <CalendarDays className="h-3.5 w-3.5" /> },
   POLICY: { variant: "warning", icon: <ScrollText className="h-3.5 w-3.5" /> },
   NOTICE: { variant: "info", icon: <Info className="h-3.5 w-3.5" /> },
+  HR: { variant: "secondary", icon: <Briefcase className="h-3.5 w-3.5" /> },
+  PAYROLL: { variant: "warning", icon: <Wallet className="h-3.5 w-3.5" /> },
+  TRAINING: { variant: "info", icon: <GraduationCap className="h-3.5 w-3.5" /> },
+  GENERAL: { variant: "secondary", icon: <Megaphone className="h-3.5 w-3.5" /> },
 };
 
-const announcements: Announcement[] = [
-  {
-    id: "1",
-    title: "Company-wide Town Hall — Aug 12",
-    category: "EVENT",
-    body: "Join us for the quarterly town hall meeting at 2 PM in the main auditorium. The executive team will share Q3 priorities, product roadmap updates, and take live questions from the audience. Live stream will also be available for remote employees.",
-    author: "Priya Sharma",
-    time: "2h ago",
-    pinned: true,
-  },
-  {
-    id: "2",
-    title: "New Remote Work Policy",
-    category: "POLICY",
-    body: "The updated remote work policy takes effect from September 1st. Employees may work remotely up to 3 days per week with manager approval. All requests must be logged through the HR portal.",
-    author: "Daniel Okafor",
-    time: "Yesterday",
-  },
-  {
-    id: "3",
-    title: "Office Renovation Notice — Floor 3",
-    category: "NOTICE",
-    body: "Floor 3 will undergo renovation next week. The engineering teams are temporarily moving to Floor 5, pods B and C. Please collect temporary access passes from reception.",
-    author: "Facilities Team",
-    time: "2d ago",
-  },
-  {
-    id: "4",
-    title: "Annual Health Checkup Drive",
-    category: "EVENT",
-    body: "Digital Wave is hosting an on-site health checkup drive on August 20th. Sessions run from 9 AM to 4 PM. Book your slot through the employee portal.",
-    author: "Hannah Lee",
-    time: "3d ago",
-  },
-  {
-    id: "5",
-    title: "Expense Reimbursement Deadline",
-    category: "POLICY",
-    body: "All Q2 expense reports must be submitted by August 28th to be included in the August payroll cycle. Late submissions will be processed in September.",
-    author: "Marcus Webb",
-    time: "4d ago",
-  },
-  {
-    id: "6",
-    title: "Cafeteria Menu — Week 32",
-    category: "NOTICE",
-    body: "The cafeteria will feature an international cuisine theme this week. All meals are complimentary for employees through Friday.",
-    author: "Facilities Team",
-    time: "5d ago",
-  },
-];
+function mapAnnouncement(item: AnnouncementApiItem): Announcement {
+  return {
+    id: item.id,
+    title: item.title,
+    category: item.category,
+    body: item.body,
+    author: item.author
+      ? `${item.author.firstName} ${item.author.lastName}`
+      : "—",
+    time: formatDateTime(item.createdAt),
+    pinned: item.pinned,
+  };
+}
 
 export default function AnnouncementsPage() {
+  const [announcements, setAnnouncements] = React.useState<Announcement[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState(false);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { api } = await import("@/lib/api");
+        const res = await api.get<AnnouncementApiItem[]>("/announcements");
+        if (cancelled) return;
+        setAnnouncements(res.map(mapAnnouncement));
+        setError(false);
+      } catch {
+        if (!cancelled) setError(true);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const pinned = announcements.filter((a) => a.pinned);
   const rest = announcements.filter((a) => !a.pinned);
 
@@ -103,67 +112,82 @@ export default function AnnouncementsPage() {
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          {pinned.map((a) => {
-            const meta = categoryMeta[a.category];
-            return (
-              <article
-                key={a.id}
-                className="relative mb-4 overflow-hidden rounded-[20px] border border-primary/20 bg-gradient-to-br from-accent via-card to-card p-6 shadow-[0_6px_24px_rgba(0,0,0,0.06)]"
-              >
-                <div className="absolute right-0 top-0 h-32 w-32 translate-x-8 -translate-y-8 rounded-full bg-primary/10 blur-2xl" />
-                <div className="relative">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Badge variant={meta.variant}>
-                      {meta.icon}
-                      {a.category}
-                    </Badge>
-                    <Badge variant="default">
-                      <Pin className="h-3.5 w-3.5" /> Pinned
-                    </Badge>
-                    <span className="ml-auto flex items-center gap-1 text-xs text-muted-foreground">
-                      <Clock className="h-3.5 w-3.5" /> {a.time}
-                    </span>
-                  </div>
-                  <h2 className="mt-3 text-xl font-bold tracking-tight">{a.title}</h2>
-                  <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-                    {a.body}
-                  </p>
-                  <div className="mt-4 flex items-center gap-2.5">
-                    <Avatar name={a.author} size="sm" />
-                    <span className="text-sm font-medium">{a.author}</span>
-                  </div>
-                </div>
-              </article>
-            );
-          })}
+          {loading ? (
+            <div className="space-y-3">
+              <Skeleton className="h-40 w-full rounded-[20px]" />
+              <Skeleton className="h-28 w-full rounded-[20px]" />
+              <Skeleton className="h-28 w-full rounded-[20px]" />
+            </div>
+          ) : error ? (
+            <EmptyState
+              title="Unable to load announcements"
+              description="Check that the backend API is reachable and you are signed in."
+            />
+          ) : (
+            <>
+              {pinned.map((a) => {
+                const meta = categoryMeta[a.category];
+                return (
+                  <article
+                    key={a.id}
+                    className="relative mb-4 overflow-hidden rounded-[20px] border border-primary/20 bg-gradient-to-br from-accent via-card to-card p-6 shadow-[0_6px_24px_rgba(0,0,0,0.06)]"
+                  >
+                    <div className="absolute right-0 top-0 h-32 w-32 translate-x-8 -translate-y-8 rounded-full bg-primary/10 blur-2xl" />
+                    <div className="relative">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge variant={meta.variant}>
+                          {meta.icon}
+                          {a.category}
+                        </Badge>
+                        <Badge variant="default">
+                          <Pin className="h-3.5 w-3.5" /> Pinned
+                        </Badge>
+                        <span className="ml-auto flex items-center gap-1 text-xs text-muted-foreground">
+                          <Clock className="h-3.5 w-3.5" /> {a.time}
+                        </span>
+                      </div>
+                      <h2 className="mt-3 text-xl font-bold tracking-tight">{a.title}</h2>
+                      <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+                        {a.body}
+                      </p>
+                      <div className="mt-4 flex items-center gap-2.5">
+                        <Avatar name={a.author} size="sm" />
+                        <span className="text-sm font-medium">{a.author}</span>
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
 
-          <div className="space-y-4">
-            {rest.map((a) => {
-              const meta = categoryMeta[a.category];
-              return (
-                <article
-                  key={a.id}
-                  className="rounded-[20px] border border-border bg-card p-5 shadow-[0_6px_24px_rgba(0,0,0,0.04)] transition-colors hover:border-primary/25"
-                >
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Badge variant={meta.variant}>
-                      {meta.icon}
-                      {a.category}
-                    </Badge>
-                    <span className="ml-auto flex items-center gap-1 text-xs text-muted-foreground">
-                      <Clock className="h-3.5 w-3.5" /> {a.time}
-                    </span>
-                  </div>
-                  <h3 className="mt-3 text-base font-semibold">{a.title}</h3>
-                  <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{a.body}</p>
-                  <div className="mt-4 flex items-center gap-2.5">
-                    <Avatar name={a.author} size="sm" />
-                    <span className="text-sm font-medium">{a.author}</span>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
+              <div className="space-y-4">
+                {rest.map((a) => {
+                  const meta = categoryMeta[a.category];
+                  return (
+                    <article
+                      key={a.id}
+                      className="rounded-[20px] border border-border bg-card p-5 shadow-[0_6px_24px_rgba(0,0,0,0.04)] transition-colors hover:border-primary/25"
+                    >
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge variant={meta.variant}>
+                          {meta.icon}
+                          {a.category}
+                        </Badge>
+                        <span className="ml-auto flex items-center gap-1 text-xs text-muted-foreground">
+                          <Clock className="h-3.5 w-3.5" /> {a.time}
+                        </span>
+                      </div>
+                      <h3 className="mt-3 text-base font-semibold">{a.title}</h3>
+                      <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{a.body}</p>
+                      <div className="mt-4 flex items-center gap-2.5">
+                        <Avatar name={a.author} size="sm" />
+                        <span className="text-sm font-medium">{a.author}</span>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            </>
+          )}
         </div>
 
         <aside className="space-y-4 lg:col-span-1">
@@ -174,10 +198,10 @@ export default function AnnouncementsPage() {
             </div>
             <div className="mt-4 space-y-3">
               {[
-                { label: "Total announcements", value: "128" },
-                { label: "Published this month", value: "16" },
-                { label: "Pinned", value: "3" },
-                { label: "Drafts awaiting review", value: "4" },
+                { label: "Total announcements", value: String(announcements.length) },
+                { label: "Published this month", value: "—" },
+                { label: "Pinned", value: String(pinned.length) },
+                { label: "Drafts awaiting review", value: "—" },
               ].map((row) => (
                 <div
                   key={row.label}
@@ -194,9 +218,9 @@ export default function AnnouncementsPage() {
             <h3 className="text-base font-semibold">Audience Reach</h3>
             <div className="mt-4 space-y-3">
               {[
-                { label: "All employees", value: "248", pct: "100%" },
-                { label: "Opened the latest notice", value: "221", pct: "89%" },
-                { label: "Marked as read", value: "204", pct: "82%" },
+                { label: "All employees", value: "—", pct: "100%" },
+                { label: "Opened the latest notice", value: "—", pct: "89%" },
+                { label: "Marked as read", value: "—", pct: "82%" },
               ].map((row) => (
                 <div key={row.label}>
                   <div className="flex items-center justify-between text-sm">

@@ -1,12 +1,15 @@
 "use client";
 
+import * as React from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/components/ui/data-table";
 import { Badge } from "@/components/ui/badge";
 import { Avatar } from "@/components/ui/avatar";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
 import { formatDate } from "@/lib/utils";
 
-type AttendanceStatus = "On Time" | "Late" | "Absent" | "Leave";
+type AttendanceStatus = "PRESENT" | "LATE" | "ABSENT" | "LEAVE";
 
 interface AttendanceRow {
   id: string;
@@ -19,25 +22,50 @@ interface AttendanceRow {
   status: AttendanceStatus;
 }
 
+interface AttendanceApiItem {
+  id: string;
+  date: string;
+  checkIn: string | null;
+  checkOut: string | null;
+  status: AttendanceStatus;
+  employee: { employeeId: string; user: { firstName: string; lastName: string } | null } | null;
+}
+
 const statusVariant: Record<AttendanceStatus, "success" | "warning" | "danger" | "info"> = {
-  "On Time": "success",
-  Late: "warning",
-  Absent: "danger",
-  Leave: "info",
+  PRESENT: "success",
+  LATE: "warning",
+  ABSENT: "danger",
+  LEAVE: "info",
 };
 
-const attendance: AttendanceRow[] = [
-  { id: "a1", employee: "Omar El-Sayed", department: "Engineering", date: "2026-08-04", checkIn: "09:02 AM", checkOut: "06:10 PM", hours: "8h 10m", status: "On Time" },
-  { id: "a2", employee: "Nour Hassan", department: "Sales", date: "2026-08-04", checkIn: "09:15 AM", checkOut: "06:30 PM", hours: "8h 15m", status: "On Time" },
-  { id: "a3", employee: "Laila Kamal", department: "Marketing", date: "2026-08-04", checkIn: "09:48 AM", checkOut: "06:05 PM", hours: "7h 47m", status: "Late" },
-  { id: "a4", employee: "Ahmed Farouk", department: "Operations", date: "2026-08-04", checkIn: "08:55 AM", checkOut: "05:40 PM", hours: "8h 05m", status: "On Time" },
-  { id: "a5", employee: "Mona Adel", department: "Human Resources", date: "2026-08-04", checkIn: "—", checkOut: "—", hours: "0h", status: "Absent" },
-  { id: "a6", employee: "Youssef Mansour", department: "Finance", date: "2026-08-04", checkIn: "—", checkOut: "—", hours: "0h", status: "Leave" },
-  { id: "a7", employee: "Salma Tarek", department: "Customer Success", date: "2026-08-05", checkIn: "09:05 AM", checkOut: "06:20 PM", hours: "8h 15m", status: "On Time" },
-  { id: "a8", employee: "Karim Nabil", department: "Product Design", date: "2026-08-05", checkIn: "09:34 AM", checkOut: "06:40 PM", hours: "8h 06m", status: "Late" },
-  { id: "a9", employee: "Fatma Ibrahim", department: "Operations", date: "2026-08-05", checkIn: "08:58 AM", checkOut: "05:50 PM", hours: "8h 02m", status: "On Time" },
-  { id: "a10", employee: "Hany Gerges", department: "Engineering", date: "2026-08-05", checkIn: "—", checkOut: "—", hours: "0h", status: "Absent" },
-];
+function formatTime(date: string | null) {
+  if (!date) return "—";
+  return new Date(date).toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function mapAttendance(item: AttendanceApiItem): AttendanceRow {
+  const name = item.employee?.user
+    ? `${item.employee.user.firstName} ${item.employee.user.lastName}`
+    : item.employee?.employeeId ?? "—";
+  let hours = "0h";
+  if (item.checkIn && item.checkOut) {
+    const diff = (new Date(item.checkOut).getTime() - new Date(item.checkIn).getTime()) / (1000 * 60 * 60);
+    hours = `${Math.floor(diff)}h ${Math.round((diff % 1) * 60)}m`;
+  }
+  return {
+    id: item.id,
+    employee: name,
+    department: "—",
+    date: item.date,
+    checkIn: formatTime(item.checkIn),
+    checkOut: formatTime(item.checkOut),
+    hours,
+    status: item.status,
+  };
+}
 
 const columns: ColumnDef<AttendanceRow>[] = [
   {
@@ -91,5 +119,49 @@ const columns: ColumnDef<AttendanceRow>[] = [
 ];
 
 export function AttendanceTable() {
-  return <DataTable columns={columns} data={attendance} />;
+  const [rows, setRows] = React.useState<AttendanceRow[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState(false);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { api } = await import("@/lib/api");
+        const res = await api.get<AttendanceApiItem[]>("/attendance");
+        if (cancelled) return;
+        setRows(res.map(mapAttendance));
+        setError(false);
+      } catch {
+        if (!cancelled) setError(true);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="space-y-3 rounded-2xl border border-border bg-card p-4">
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-10 w-full" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <EmptyState
+        title="Unable to load attendance records"
+        description="Check that the backend API is reachable and you are signed in."
+      />
+    );
+  }
+
+  return <DataTable columns={columns} data={rows} />;
 }

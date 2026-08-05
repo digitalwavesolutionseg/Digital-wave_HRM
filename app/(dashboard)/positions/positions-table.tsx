@@ -8,10 +8,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
 import { formatCurrency } from "@/lib/utils";
 
-type PositionStatus = "Open" | "On Hold" | "Filled" | "Paused";
-type EmploymentType = "Full-time" | "Part-time" | "Contract" | "Internship";
+type EmploymentType = string;
 
 interface PositionRow {
   id: string;
@@ -21,37 +22,57 @@ interface PositionRow {
   openings: number;
   minSalary: number;
   maxSalary: number;
-  status: PositionStatus;
 }
 
-const statusVariant: Record<PositionStatus, "success" | "warning" | "muted" | "info"> = {
-  Open: "success",
-  "On Hold": "warning",
-  Filled: "muted",
-  Paused: "info",
+interface PositionApiItem {
+  id: string;
+  title: string;
+  department: { id: string; name: string } | null;
+  employmentType: EmploymentType;
+  minSalary: number | string | null;
+  maxSalary: number | string | null;
+  _count: { employees: number } | undefined;
+}
+
+const typeVariant: Record<string, "default" | "secondary" | "info" | "muted"> = {
+  FULL_TIME: "default",
+  PART_TIME: "secondary",
+  CONTRACT: "info",
+  INTERNSHIP: "muted",
+  FULL_TIME_CONTRACT: "default",
 };
 
-const typeVariant: Record<EmploymentType, "default" | "secondary" | "info" | "muted"> = {
-  "Full-time": "default",
-  "Part-time": "secondary",
-  Contract: "info",
-  Internship: "muted",
-};
+function normalizeType(type: EmploymentType): string {
+  switch (type) {
+    case "FULL_TIME":
+    case "FULL_TIME_CONTRACT":
+      return "Full-time";
+    case "PART_TIME":
+      return "Part-time";
+    case "CONTRACT":
+      return "Contract";
+    case "INTERNSHIP":
+      return "Internship";
+    default:
+      return type ?? "Contract";
+  }
+}
 
-const positions: PositionRow[] = [
-  { id: "P-1001", title: "Senior Frontend Engineer", department: "Engineering", type: "Full-time", openings: 2, minSalary: 95000, maxSalary: 125000, status: "Open" },
-  { id: "P-1002", title: "Backend Engineer (Node.js)", department: "Engineering", type: "Full-time", openings: 3, minSalary: 90000, maxSalary: 115000, status: "Open" },
-  { id: "P-1003", title: "Sales Account Executive", department: "Sales", type: "Full-time", openings: 4, minSalary: 55000, maxSalary: 75000, status: "Open" },
-  { id: "P-1004", title: "Marketing Manager", department: "Marketing", type: "Full-time", openings: 1, minSalary: 70000, maxSalary: 90000, status: "On Hold" },
-  { id: "P-1005", title: "Data Analyst", department: "Operations", type: "Contract", openings: 1, minSalary: 45000, maxSalary: 60000, status: "Paused" },
-  { id: "P-1006", title: "HR Business Partner", department: "Human Resources", type: "Full-time", openings: 1, minSalary: 65000, maxSalary: 85000, status: "Open" },
-  { id: "P-1007", title: "Finance Controller", department: "Finance", type: "Full-time", openings: 1, minSalary: 100000, maxSalary: 130000, status: "Filled" },
-  { id: "P-1008", title: "Product Designer (UX/UI)", department: "Marketing", type: "Contract", openings: 2, minSalary: 60000, maxSalary: 80000, status: "Open" },
-  { id: "P-1009", title: "Customer Support Specialist", department: "Operations", type: "Part-time", openings: 5, minSalary: 25000, maxSalary: 35000, status: "Open" },
-  { id: "P-1010", title: "QA Engineer", department: "Engineering", type: "Internship", openings: 1, minSalary: 15000, maxSalary: 20000, status: "Filled" },
-  { id: "P-1011", title: "IT Administrator", department: "Operations", type: "Full-time", openings: 1, minSalary: 50000, maxSalary: 65000, status: "On Hold" },
-  { id: "P-1012", title: "Growth Marketing Specialist", department: "Marketing", type: "Full-time", openings: 2, minSalary: 48000, maxSalary: 62000, status: "Open" },
-];
+function mapPosition(item: PositionApiItem): PositionRow {
+  return {
+    id: item.id,
+    title: item.title,
+    department: item.department?.name ?? "—",
+    type: normalizeType(item.employmentType),
+    openings: item._count?.employees ?? 0,
+    minSalary: Number(item.minSalary ?? 0),
+    maxSalary: Number(item.maxSalary ?? 0),
+  };
+}
+
+function positionStatus(): string {
+  return "Open";
+}
 
 const departments = [
   "All Departments",
@@ -68,17 +89,42 @@ const statuses = ["All Statuses", "Open", "On Hold", "Filled", "Paused"];
 export function PositionsTable() {
   const [search, setSearch] = React.useState("");
   const [department, setDepartment] = React.useState("All Departments");
-  const [status, setStatus] = React.useState("All Statuses");
+  const [rows, setRows] = React.useState<PositionRow[]>([]);
+  const [departmentOptions, setDepartmentOptions] = React.useState<string[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState(false);
 
-  const filtered = positions.filter((position) => {
+  React.useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { api } = await import("@/lib/api");
+        const res = await api.get<PositionApiItem[]>("/positions");
+        if (cancelled) return;
+        setRows(res.map(mapPosition));
+        setDepartmentOptions([
+          "All Departments",
+          ...Array.from(new Set(res.map((p) => p.department?.name).filter((n): n is string => !!n))),
+        ]);
+        setError(false);
+      } catch {
+        if (!cancelled) setError(true);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const filtered = rows.filter((position) => {
     const matchesSearch =
       search.trim() === "" ||
       position.title.toLowerCase().includes(search.toLowerCase()) ||
       position.id.toLowerCase().includes(search.toLowerCase());
-    const matchesDepartment =
-      department === "All Departments" || position.department === department;
-    const matchesStatus = status === "All Statuses" || position.status === status;
-    return matchesSearch && matchesDepartment && matchesStatus;
+    const matchesDepartment = department === "All Departments" || position.department === department;
+    return matchesSearch && matchesDepartment;
   });
 
   const toolbar = (
@@ -94,16 +140,9 @@ export function PositionsTable() {
       </div>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <Select value={department} onChange={(e) => setDepartment(e.target.value)} className="sm:w-48">
-          {departments.map((d) => (
+          {departmentOptions.map((d) => (
             <option key={d} value={d}>
               {d}
-            </option>
-          ))}
-        </Select>
-        <Select value={status} onChange={(e) => setStatus(e.target.value)} className="sm:w-40">
-          {statuses.map((s) => (
-            <option key={s} value={s}>
-              {s}
             </option>
           ))}
         </Select>
@@ -112,14 +151,13 @@ export function PositionsTable() {
           onClick={() => {
             setSearch("");
             setDepartment("All Departments");
-            setStatus("All Statuses");
           }}
         >
           Reset
         </Button>
       </div>
       <span className="sm:ml-auto text-sm text-muted-foreground">
-        {filtered.length} of {positions.length} positions
+        {filtered.length} of {rows.length} positions
       </span>
     </div>
   );
@@ -144,7 +182,7 @@ export function PositionsTable() {
       accessorKey: "type",
       header: "Employment Type",
       cell: ({ row }) => (
-        <Badge variant={typeVariant[row.original.type]}>{row.original.type}</Badge>
+        <Badge variant={typeVariant[row.original.type] ?? "default"}>{row.original.type}</Badge>
       ),
     },
     {
@@ -168,11 +206,29 @@ export function PositionsTable() {
     {
       accessorKey: "status",
       header: "Status",
-      cell: ({ row }) => (
-        <Badge variant={statusVariant[row.original.status]}>{row.original.status}</Badge>
-      ),
+      cell: () => <Badge variant="success">Open</Badge>,
     },
   ];
+
+  if (loading) {
+    return (
+      <div className="space-y-3 rounded-2xl border border-border bg-card p-4">
+        <Skeleton className="h-4 w-64" />
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-10 w-full" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <EmptyState
+        title="Unable to load positions"
+        description="Check that the backend API is reachable and you are signed in."
+      />
+    );
+  }
 
   return <DataTable columns={columns} data={filtered} toolbar={toolbar} />;
 }

@@ -1,40 +1,29 @@
 "use client";
 
+import * as React from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Building2, Eye, Pencil, Trash2, Users } from "lucide-react";
 import { DataTable } from "@/components/ui/data-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
-import { formatCurrency } from "@/lib/utils";
-
-type DepartmentStatus = "Active" | "Restructuring" | "On Hold";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
 
 interface DepartmentRow {
   id: string;
   name: string;
   manager: string;
   employees: number;
-  budget: number;
-  status: DepartmentStatus;
+  status: string;
 }
 
-const statusVariant: Record<DepartmentStatus, "success" | "warning" | "muted"> = {
-  Active: "success",
-  Restructuring: "warning",
-  "On Hold": "muted",
-};
-
-const departments: DepartmentRow[] = [
-  { id: "d1", name: "Engineering", manager: "Omar El-Sayed", employees: 48, budget: 1250000, status: "Active" },
-  { id: "d2", name: "Sales", manager: "Nour Hassan", employees: 36, budget: 540000, status: "Active" },
-  { id: "d3", name: "Marketing", manager: "Laila Kamal", employees: 24, budget: 310000, status: "Active" },
-  { id: "d4", name: "Operations", manager: "Ahmed Farouk", employees: 52, budget: 680000, status: "Active" },
-  { id: "d5", name: "Human Resources", manager: "Mona Adel", employees: 18, budget: 190000, status: "Active" },
-  { id: "d6", name: "Finance", manager: "Youssef Mansour", employees: 14, budget: 160000, status: "Restructuring" },
-  { id: "d7", name: "Customer Success", manager: "Salma Tarek", employees: 22, budget: 240000, status: "Active" },
-  { id: "d8", name: "Product Design", manager: "Karim Nabil", employees: 12, budget: 150000, status: "On Hold" },
-];
+interface DepartmentApiItem {
+  id: string;
+  name: string;
+  manager: { employeeId: string; user: { firstName: string; lastName: string } | null } | null;
+  _count: { employees: number; positions: number };
+}
 
 const columns: ColumnDef<DepartmentRow>[] = [
   {
@@ -73,20 +62,9 @@ const columns: ColumnDef<DepartmentRow>[] = [
     ),
   },
   {
-    accessorKey: "budget",
-    header: "Budget",
-    cell: ({ row }) => (
-      <span className="text-sm font-medium text-foreground">
-        {formatCurrency(row.original.budget)}
-      </span>
-    ),
-  },
-  {
     accessorKey: "status",
     header: "Status",
-    cell: ({ row }) => (
-      <Badge variant={statusVariant[row.original.status]}>{row.original.status}</Badge>
-    ),
+    cell: () => <Badge variant="success">Active</Badge>,
   },
   {
     id: "actions",
@@ -107,6 +85,63 @@ const columns: ColumnDef<DepartmentRow>[] = [
   },
 ];
 
+function mapDepartment(item: DepartmentApiItem): DepartmentRow {
+  const manager = item.manager?.user
+    ? `${item.manager.user.firstName} ${item.manager.user.lastName}`
+    : "—";
+  return {
+    id: item.id,
+    name: item.name,
+    manager,
+    employees: item._count?.employees ?? 0,
+    status: "Active",
+  };
+}
+
 export function DepartmentsTable() {
-  return <DataTable columns={columns} data={departments} />;
+  const [rows, setRows] = React.useState<DepartmentRow[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState(false);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { api } = await import("@/lib/api");
+        const res = await api.get<DepartmentApiItem[]>("/departments");
+        if (cancelled) return;
+        setRows(res.map(mapDepartment));
+        setError(false);
+      } catch {
+        if (!cancelled) setError(true);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="space-y-3 rounded-2xl border border-border bg-card p-4">
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-10 w-full" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <EmptyState
+        title="Unable to load departments"
+        description="Check that the backend API is reachable and you are signed in."
+      />
+    );
+  }
+
+  return <DataTable columns={columns} data={rows} />;
 }

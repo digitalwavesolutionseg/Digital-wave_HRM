@@ -36,9 +36,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { StatCard } from "@/components/dashboard/stat-card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
 import { formatCurrency } from "@/lib/utils";
 
-type PayrollStatus = "PAID" | "PENDING" | "PROCESSING";
+type PayrollStatus = "PAID" | "PROCESSED" | "DRAFT";
 
 interface PayrollRun {
   id: string;
@@ -51,18 +53,35 @@ interface PayrollRun {
   status: PayrollStatus;
 }
 
-const payrollRuns: PayrollRun[] = [
-  { id: "PR-248-01", employee: "Sarah Chen", role: "Senior Frontend Engineer", gross: 9200, allowances: 600, deductions: 2140, net: 7660, status: "PAID" },
-  { id: "PR-248-02", employee: "James Okafor", role: "Product Manager", gross: 10500, allowances: 800, deductions: 2350, net: 8950, status: "PAID" },
-  { id: "PR-248-03", employee: "Priya Sharma", role: "Data Scientist", gross: 9800, allowances: 500, deductions: 2210, net: 8090, status: "PROCESSING" },
-  { id: "PR-248-04", employee: "Marcus Webb", role: "Sales Lead", gross: 8700, allowances: 1200, deductions: 1950, net: 7950, status: "PENDING" },
-  { id: "PR-248-05", employee: "Elena Petrova", role: "UX Designer", gross: 7600, allowances: 400, deductions: 1720, net: 6280, status: "PAID" },
-  { id: "PR-248-06", employee: "David Kim", role: "DevOps Engineer", gross: 9400, allowances: 450, deductions: 2080, net: 7770, status: "PAID" },
-  { id: "PR-248-07", employee: "Aisha Bello", role: "HR Business Partner", gross: 6800, allowances: 300, deductions: 1490, net: 5610, status: "PROCESSING" },
-  { id: "PR-248-08", employee: "Tomás Herrera", role: "Accountant", gross: 7100, allowances: 350, deductions: 1560, net: 5890, status: "PAID" },
-  { id: "PR-248-09", employee: "Lena Fischer", role: "Marketing Manager", gross: 8200, allowances: 500, deductions: 1820, net: 6880, status: "PENDING" },
-  { id: "PR-248-10", employee: "Ryan Patel", role: "Backend Engineer", gross: 8900, allowances: 400, deductions: 1990, net: 7310, status: "PAID" },
-];
+interface PayrollApiItem {
+  id: string;
+  periodMonth: number;
+  periodYear: number;
+  grossSalary: number | string;
+  allowances: number | string;
+  bonuses: number | string;
+  deductions: number | string;
+  tax: number | string;
+  netPay: number | string;
+  status: PayrollStatus;
+  employee: { employeeId: string; department: { name: string } | null; user: { firstName: string; lastName: string } | null } | null;
+}
+
+function mapPayroll(item: PayrollApiItem): PayrollRun {
+  const name = item.employee?.user
+    ? `${item.employee.user.firstName} ${item.employee.user.lastName}`
+    : item.employee?.employeeId ?? "—";
+  return {
+    id: item.id,
+    employee: name,
+    role: item.employee?.department?.name ?? "—",
+    gross: Number(item.grossSalary),
+    allowances: Number(item.allowances) + Number(item.bonuses),
+    deductions: Number(item.deductions) + Number(item.tax),
+    net: Number(item.netPay),
+    status: item.status,
+  };
+}
 
 const payrollTrend = [
   { month: "Jan", gross: 388400, net: 298600 },
@@ -78,8 +97,8 @@ const payrollTrend = [
 function PayrollStatusBadge({ status }: { status: PayrollStatus }) {
   const map: Record<PayrollStatus, { label: string; variant: "success" | "warning" | "info" }> = {
     PAID: { label: "Paid", variant: "success" },
-    PENDING: { label: "Pending", variant: "warning" },
-    PROCESSING: { label: "Processing", variant: "info" },
+    PROCESSED: { label: "Processed", variant: "info" },
+    DRAFT: { label: "Draft", variant: "warning" },
   };
   const { label, variant } = map[status];
   return <Badge variant={variant}>{label}</Badge>;
@@ -98,6 +117,45 @@ export default function PayrollPage() {
   const [period, setPeriod] = React.useState("August 2026");
   const [runOpen, setRunOpen] = React.useState(false);
   const [selected, setSelected] = React.useState<PayrollRun | null>(null);
+  const [runs, setRuns] = React.useState<PayrollRun[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState(false);
+
+  const fetchRuns = React.useCallback(async (month: number, year: number) => {
+    try {
+      const { api } = await import("@/lib/api");
+      const res = await api.get<PayrollApiItem[]>(`/payroll?month=${month}&year=${year}`);
+      setRuns(res.map(mapPayroll));
+      setError(false);
+    } catch {
+      setError(true);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    const now = new Date();
+    const month = now.getMonth() + 1;
+    const year = now.getFullYear();
+    const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    setPeriod(`${months[month - 1]} ${year}`);
+    fetchRuns(month, year);
+  }, [fetchRuns]);
+
+  const handlePeriodChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value;
+    setPeriod(value);
+    const parts = value.split(" ");
+    const month = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"].indexOf(parts[0]) + 1;
+    const year = Number(parts[1]);
+    setLoading(true);
+    fetchRuns(month, year);
+  };
+
+  const grossTotal = runs.reduce((acc, r) => acc + r.gross, 0);
+  const netTotal = runs.reduce((acc, r) => acc + r.net, 0);
+  const deductionsTotal = runs.reduce((acc, r) => acc + r.deductions, 0);
 
   const columns = React.useMemo<ColumnDef<PayrollRun>[]>(
     () => [
@@ -159,12 +217,12 @@ export default function PayrollPage() {
     <div className="mx-auto max-w-[1400px] space-y-6 animate-fade-up">
       <PageHeader
         title="Payroll"
-        description="Manage payroll runs, payslips and compensation for August 2026."
+        description={`Manage payroll runs, payslips and compensation for ${period}.`}
         actions={
           <>
             <div className="w-40">
-              <Select value={period} onChange={(e) => setPeriod(e.target.value)}>
-                <option>August 2026</option>
+              <Select value={period} onChange={handlePeriodChange}>
+                <option>{period}</option>
                 <option>July 2026</option>
                 <option>June 2026</option>
                 <option>May 2026</option>
@@ -181,29 +239,29 @@ export default function PayrollPage() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           title="Monthly Gross"
-          value="$428,450"
-          delta="+3.8%"
+          value={formatCurrency(grossTotal)}
+          delta=""
           icon={<Wallet className="h-5 w-5" />}
           iconClassName="bg-info/10 text-info"
         />
         <StatCard
           title="Net Payroll"
-          value="$329,080"
-          delta="+3.1%"
+          value={formatCurrency(netTotal)}
+          delta=""
           icon={<Banknote className="h-5 w-5" />}
           iconClassName="bg-success/10 text-success"
         />
         <StatCard
           title="Deductions"
-          value="$99,370"
-          delta="+4.6%"
+          value={formatCurrency(deductionsTotal)}
+          delta=""
           icon={<ReceiptText className="h-5 w-5" />}
           iconClassName="bg-warning/10 text-warning"
         />
         <StatCard
           title="Employees Paid"
-          value="248"
-          delta="+6"
+          value={String(runs.length)}
+          delta=""
           icon={<Users className="h-5 w-5" />}
           iconClassName="bg-primary/10 text-primary"
         />
@@ -272,14 +330,28 @@ export default function PayrollPage() {
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-lg font-semibold">Payroll Runs</h2>
-            <p className="text-sm text-muted-foreground">{period} · {payrollRuns.length} employee runs</p>
+            <p className="text-sm text-muted-foreground">{period} · {runs.length} employee runs</p>
           </div>
           <Button variant="outline" size="sm">
             <Download className="h-4 w-4" />
             Export
           </Button>
         </div>
-        <DataTable columns={columns} data={payrollRuns} pagination />
+        {loading ? (
+          <div className="space-y-3 rounded-2xl border border-border bg-card p-4">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+        ) : error ? (
+          <EmptyState
+            title="Unable to load payroll runs"
+            description="Check that the backend API is reachable and you are signed in."
+          />
+        ) : (
+          <DataTable columns={columns} data={runs} pagination />
+        )}
       </div>
 
       <Dialog open={runOpen} onOpenChange={setRunOpen}>

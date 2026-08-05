@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { useState } from "react";
 import {
   Building2,
@@ -21,6 +22,8 @@ import { Badge } from "@/components/ui/badge";
 import { Input, Textarea, Label } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
 import { DataTable } from "@/components/ui/data-table";
 import type { ColumnDef } from "@tanstack/react-table";
 import { cn } from "@/lib/utils";
@@ -134,6 +137,35 @@ function SectionCard({
 
 export default function SettingsPage() {
   const [active, setActive] = useState<SectionId>("company");
+  const [settings, setSettings] = React.useState<Record<string, any>>({});
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState(false);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { api } = await import("@/lib/api");
+        const res = await api.get<Record<string, any>>("/settings");
+        if (cancelled) return;
+        setSettings(res);
+        setError(false);
+      } catch {
+        if (!cancelled) setError(true);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const getSetting = (key: string, fallback = "") => {
+    const value = settings[key];
+    if (value === null || value === undefined) return fallback;
+    return String(value);
+  };
 
   return (
     <div className="mx-auto max-w-[1400px] space-y-6 animate-fade-up">
@@ -164,22 +196,42 @@ export default function SettingsPage() {
         </aside>
 
         <div className="min-w-0 space-y-6">
+          {loading ? (
+            <Card>
+              <CardHeader>
+                <Skeleton className="h-5 w-40" />
+                <Skeleton className="h-4 w-56" />
+              </CardHeader>
+              <CardContent className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+              </CardContent>
+            </Card>
+          ) : error ? (
+            <EmptyState
+              title="Unable to load settings"
+              description="Check that the backend API is reachable and you are signed in."
+            />
+          ) : (
+          <>
           {active === "company" && (
             <SectionCard
               title="Company Settings"
               description="Basic information about your organization."
             >
               <FormField label="Company Name">
-                <Input defaultValue="Digital Wave Inc." />
+                <Input defaultValue={getSetting("companyName", "Digital Wave Inc.")} />
               </FormField>
               <FormField label="Legal Entity">
-                <Input defaultValue="Digital Wave Holdings LLC" />
+                <Input defaultValue={getSetting("legalEntity", "Digital Wave Holdings LLC")} />
               </FormField>
               <FormField label="Tax ID / Registration Number">
-                <Input defaultValue="DW-8842-1930" />
+                <Input defaultValue={getSetting("taxId", "DW-8842-1930")} />
               </FormField>
               <FormField label="Country">
-                <Select defaultValue="US">
+                <Select defaultValue={getSetting("country", "US")}>
                   <option value="US">United States</option>
                   <option value="UK">United Kingdom</option>
                   <option value="AE">United Arab Emirates</option>
@@ -187,7 +239,7 @@ export default function SettingsPage() {
                 </Select>
               </FormField>
               <FormField label="Timezone">
-                <Select defaultValue="est">
+                <Select defaultValue={getSetting("timezone", "est")}>
                   <option value="est">(GMT-5) Eastern Time</option>
                   <option value="pst">(GMT-8) Pacific Time</option>
                   <option value="gmt">(GMT+0) Greenwich Mean Time</option>
@@ -195,7 +247,7 @@ export default function SettingsPage() {
                 </Select>
               </FormField>
               <FormField label="Default Currency">
-                <Select defaultValue="usd">
+                <Select defaultValue={getSetting("currency", "usd")}>
                   <option value="usd">USD — US Dollar</option>
                   <option value="eur">EUR — Euro</option>
                   <option value="aed">AED — UAE Dirham</option>
@@ -205,11 +257,11 @@ export default function SettingsPage() {
               <FormField label="Head Office Address" hint="Used on official documents and contracts.">
                 <Textarea
                   rows={3}
-                  defaultValue="1201 Innovation Drive, Suite 400, Austin, TX 78701"
+                  defaultValue={getSetting("address", "1201 Innovation Drive, Suite 400, Austin, TX 78701")}
                 />
               </FormField>
               <FormField label="Company Website">
-                <Input defaultValue="https://digitalwave.example.com" />
+                <Input defaultValue={getSetting("website", "https://digitalwave.example.com")} />
               </FormField>
             </SectionCard>
           )}
@@ -508,6 +560,8 @@ export default function SettingsPage() {
                 </Button>
               </CardFooter>
             </Card>
+          )}
+          </>
           )}
         </div>
       </div>

@@ -11,6 +11,8 @@ import { Avatar } from "@/components/ui/avatar";
 import { Select } from "@/components/ui/select";
 import { Input, Label, Textarea } from "@/components/ui/input";
 import { DataTable } from "@/components/ui/data-table";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
 import {
   Dialog,
   DialogContent,
@@ -47,67 +49,68 @@ interface PipelineStage {
   candidates: PipelineCandidate[];
 }
 
-const jobPosts: JobPost[] = [
-  { id: "JP-1042", title: "Senior Frontend Engineer", department: "Engineering", applicants: 42, openings: 2, status: "OPEN" },
-  { id: "JP-1039", title: "Product Designer", department: "Design", applicants: 28, openings: 1, status: "OPEN" },
-  { id: "JP-1038", title: "Backend Engineer (Go)", department: "Engineering", applicants: 35, openings: 3, status: "OPEN" },
-  { id: "JP-1035", title: "Data Scientist", department: "Data & Analytics", applicants: 51, openings: 2, status: "OPEN" },
-  { id: "JP-1031", title: "Sales Account Executive", department: "Sales", applicants: 23, openings: 4, status: "ON_HOLD" },
-  { id: "JP-1026", title: "HR Business Partner", department: "People", applicants: 18, openings: 1, status: "CLOSED" },
-  { id: "JP-1022", title: "DevOps Engineer", department: "Engineering", applicants: 30, openings: 2, status: "OPEN" },
-  { id: "JP-1018", title: "Marketing Manager", department: "Marketing", applicants: 26, openings: 1, status: "ON_HOLD" },
-];
+interface JobPostApiItem {
+  id: string;
+  title: string;
+  department: { name: string } | null;
+  openings: number | string | null;
+  status: JobStatus;
+  salaryRange: string | null;
+  _count: { candidates: number };
+}
 
-const pipeline: PipelineStage[] = [
-  {
-    id: "review",
-    title: "Application Review",
-    dot: "bg-muted-foreground",
-    candidates: [
-      { id: "C-201", name: "Emma Wilson", role: "Frontend Developer", applied: "Applied 1d ago", score: 88 },
-      { id: "C-202", name: "Noah Garcia", role: "Data Analyst", applied: "Applied 2d ago", score: 74 },
-      { id: "C-203", name: "Olivia Brown", role: "Product Designer", applied: "Applied 3d ago", score: 81 },
-    ],
-  },
-  {
-    id: "screening",
-    title: "Screening",
-    dot: "bg-warning",
-    candidates: [
-      { id: "C-198", name: "Liam Johnson", role: "Backend Engineer", applied: "Applied 4d ago", score: 79 },
-      { id: "C-197", name: "Ava Martinez", role: "Marketing Specialist", applied: "Applied 5d ago", score: 67 },
-      { id: "C-196", name: "Lucas Silva", role: "QA Engineer", applied: "Applied 6d ago", score: 72 },
-    ],
-  },
-  {
-    id: "interview",
-    title: "Interview",
-    dot: "bg-primary",
-    candidates: [
-      { id: "C-190", name: "Mia Anderson", role: "Senior Designer", applied: "Applied 1w ago", score: 91 },
-      { id: "C-189", name: "Ethan Thompson", role: "DevOps Engineer", applied: "Applied 1w ago", score: 85 },
-      { id: "C-188", name: "Sophia Lee", role: "Content Strategist", applied: "Applied 1w ago", score: 77 },
-    ],
-  },
-  {
-    id: "offer",
-    title: "Offer",
-    dot: "bg-[#8B5CF6]",
-    candidates: [
-      { id: "C-182", name: "Jacob Miller", role: "Fullstack Developer", applied: "Applied 2w ago", score: 94 },
-      { id: "C-180", name: "Isabella Davis", role: "Account Executive", applied: "Applied 2w ago", score: 89 },
-    ],
-  },
-  {
-    id: "hired",
-    title: "Hired",
-    dot: "bg-success",
-    candidates: [
-      { id: "C-171", name: "William Clark", role: "Frontend Engineer", applied: "Started Aug 4", score: 96 },
-      { id: "C-165", name: "Charlotte Moore", role: "Data Scientist", applied: "Started Jul 28", score: 92 },
-    ],
-  },
-];
+interface CandidateApiItem {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  stage: string;
+  jobPost: { id: string; title: string } | null;
+}
+
+const stageConfig: Record<string, { title: string; dot: string }> = {
+  APPLIED: { title: "Application Review", dot: "bg-muted-foreground" },
+  SCREENING: { title: "Screening", dot: "bg-warning" },
+  INTERVIEW: { title: "Interview", dot: "bg-primary" },
+  OFFER: { title: "Offer", dot: "bg-[#8B5CF6]" },
+  HIRED: { title: "Hired", dot: "bg-success" },
+  REJECTED: { title: "Rejected", dot: "bg-destructive" },
+};
+
+const stageOrder = ["APPLIED", "SCREENING", "INTERVIEW", "OFFER", "HIRED", "REJECTED"];
+
+function mapJobPost(item: JobPostApiItem): JobPost {
+  return {
+    id: item.id,
+    title: item.title,
+    department: item.department?.name ?? "—",
+    applicants: item._count?.candidates ?? 0,
+    openings: Number(item.openings ?? 0),
+    status: item.status,
+  };
+}
+
+function buildPipeline(candidates: CandidateApiItem[]): PipelineStage[] {
+  const grouped = new Map<string, PipelineCandidate[]>();
+  for (const c of candidates) {
+    const key = stageOrder.includes(c.stage) ? c.stage : "APPLIED";
+    const list = grouped.get(key) ?? [];
+    list.push({
+      id: c.id,
+      name: c.name,
+      role: c.jobPost?.title ?? "Candidate",
+      applied: c.email ?? "—",
+      score: 0,
+    });
+    grouped.set(key, list);
+  }
+  return stageOrder.map((s) => ({
+    id: s,
+    title: stageConfig[s]?.title ?? s,
+    dot: stageConfig[s]?.dot ?? "bg-muted-foreground",
+    candidates: grouped.get(s) ?? [],
+  }));
+}
 
 function JobStatusBadge({ status }: { status: JobStatus }) {
   const map: Record<JobStatus, { label: string; variant: "success" | "warning" | "muted" }> = {
@@ -121,6 +124,34 @@ function JobStatusBadge({ status }: { status: JobStatus }) {
 
 export default function RecruitmentPage() {
   const [postOpen, setPostOpen] = React.useState(false);
+  const [jobPosts, setJobPosts] = React.useState<JobPost[]>([]);
+  const [pipeline, setPipeline] = React.useState<PipelineStage[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState(false);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { api } = await import("@/lib/api");
+        const [postsRes, candidatesRes] = await Promise.all([
+          api.get<JobPostApiItem[]>("/recruitment/job-posts"),
+          api.get<CandidateApiItem[]>("/recruitment/candidates"),
+        ]);
+        if (cancelled) return;
+        setJobPosts(postsRes.map(mapJobPost));
+        setPipeline(buildPipeline(candidatesRes));
+        setError(false);
+      } catch {
+        if (!cancelled) setError(true);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const columns = React.useMemo<ColumnDef<JobPost>[]>(
     () => [
@@ -216,7 +247,9 @@ export default function RecruitmentPage() {
         <Card>
           <CardContent className="p-5">
             <p className="text-sm font-medium text-muted-foreground">Hired This Month</p>
-            <p className="mt-2 text-3xl font-bold tracking-tight text-success">9</p>
+            <p className="mt-2 text-3xl font-bold tracking-tight text-success">
+              {pipeline.find((s) => s.id === "HIRED")?.candidates.length ?? 0}
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -233,7 +266,23 @@ export default function RecruitmentPage() {
           </Button>
         </CardHeader>
         <CardContent>
-          <div className="flex gap-4 overflow-x-auto pb-2">
+          {loading ? (
+            <div className="flex gap-4 overflow-x-auto pb-2">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="w-[260px] shrink-0 space-y-2.5 rounded-[16px] bg-muted/50 p-3">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-24 w-full rounded-[14px]" />
+                  <Skeleton className="h-24 w-full rounded-[14px]" />
+                </div>
+              ))}
+            </div>
+          ) : error ? (
+            <EmptyState
+              title="Unable to load candidates"
+              description="Check that the backend API is reachable and you are signed in."
+            />
+          ) : (
+            <div className="flex gap-4 overflow-x-auto pb-2">
             {pipeline.map((stage) => (
               <div key={stage.id} className="w-[260px] shrink-0 rounded-[16px] bg-muted/50 p-3">
                 <div className="mb-3 flex items-center justify-between px-1">
@@ -270,6 +319,7 @@ export default function RecruitmentPage() {
               </div>
             ))}
           </div>
+          )}
         </CardContent>
       </Card>
 
@@ -278,6 +328,14 @@ export default function RecruitmentPage() {
           <h2 className="text-lg font-semibold">Job Posts</h2>
           <p className="text-sm text-muted-foreground">{jobPosts.length} active and historical positions</p>
         </div>
+        {loading ? (
+          <div className="space-y-3 rounded-2xl border border-border bg-card p-4">
+            <Skeleton className="h-4 w-64" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+        ) : (
         <DataTable
           columns={columns}
           data={jobPosts}
@@ -299,6 +357,7 @@ export default function RecruitmentPage() {
             </div>
           }
         />
+        )}
       </div>
 
       <Dialog open={postOpen} onOpenChange={setPostOpen}>

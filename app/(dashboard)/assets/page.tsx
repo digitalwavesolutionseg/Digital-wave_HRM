@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import {
   Package,
   UserCheck,
@@ -10,9 +11,6 @@ import {
   Monitor,
   HardDrive,
   Smartphone,
-  Printer,
-  Headphones,
-  Keyboard,
   Mouse,
 } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
@@ -22,13 +20,13 @@ import { Avatar } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/data-table";
 import type { ColumnDef } from "@tanstack/react-table";
-
-type Category = "Laptop" | "Monitor" | "Hardware" | "Peripheral" | "Mobile";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
 
 type Asset = {
   id: string;
   name: string;
-  category: Category;
+  category: string;
   icon: React.ReactNode;
   serial: string;
   assignedTo: string;
@@ -36,128 +34,53 @@ type Asset = {
   status: "ASSIGNED" | "AVAILABLE" | "MAINTENANCE";
 };
 
-const assets: Asset[] = [
-  {
-    id: "1",
-    name: 'MacBook Pro 14"',
-    category: "Laptop",
-    icon: <Laptop className="h-4 w-4" />,
-    serial: "DWMBP-00231",
-    assignedTo: "Ava Thompson",
-    condition: "EXCELLENT",
-    status: "ASSIGNED",
-  },
-  {
-    id: "2",
-    name: "Dell UltraSharp U2723QE",
-    category: "Monitor",
-    icon: <Monitor className="h-4 w-4" />,
-    serial: "DWUS-00847",
-    assignedTo: "Liam Chen",
-    condition: "GOOD",
-    status: "ASSIGNED",
-  },
-  {
-    id: "3",
-    name: "Samsung Galaxy Tab S9",
-    category: "Mobile",
-    icon: <Smartphone className="h-4 w-4" />,
-    serial: "DWGT-00412",
-    assignedTo: "Unassigned",
-    condition: "EXCELLENT",
-    status: "AVAILABLE",
-  },
-  {
-    id: "4",
-    name: "Dell Precision 5680",
-    category: "Laptop",
-    icon: <Laptop className="h-4 w-4" />,
-    serial: "DWPD-00903",
-    assignedTo: "Maya Rodriguez",
-    condition: "FAIR",
-    status: "MAINTENANCE",
-  },
-  {
-    id: "5",
-    name: "Logitech MX Master 3S",
-    category: "Peripheral",
-    icon: <Mouse className="h-4 w-4" />,
-    serial: "DWMM-00118",
-    assignedTo: "Noah Williams",
-    condition: "GOOD",
-    status: "ASSIGNED",
-  },
-  {
-    id: "6",
-    name: "Keychron K8 Pro",
-    category: "Peripheral",
-    icon: <Keyboard className="h-4 w-4" />,
-    serial: "DWKK-00556",
-    assignedTo: "Olivia Bennett",
-    condition: "EXCELLENT",
-    status: "ASSIGNED",
-  },
-  {
-    id: "7",
-    name: "HP LaserJet Pro M404",
-    category: "Hardware",
-    icon: <Printer className="h-4 w-4" />,
-    serial: "DWHL-00377",
-    assignedTo: "Facilities",
-    condition: "GOOD",
-    status: "ASSIGNED",
-  },
-  {
-    id: "8",
-    name: "Samsung T7 SSD 2TB",
-    category: "Hardware",
-    icon: <HardDrive className="h-4 w-4" />,
-    serial: "DWST-00724",
-    assignedTo: "Unassigned",
-    condition: "EXCELLENT",
-    status: "AVAILABLE",
-  },
-  {
-    id: "9",
-    name: "Sony WH-1000XM5",
-    category: "Peripheral",
-    icon: <Headphones className="h-4 w-4" />,
-    serial: "DWSH-00263",
-    assignedTo: "Ethan Park",
-    condition: "FAIR",
-    status: "ASSIGNED",
-  },
-  {
-    id: "10",
-    name: "Surface Laptop Studio 2",
-    category: "Laptop",
-    icon: <Laptop className="h-4 w-4" />,
-    serial: "DWSL-01002",
-    assignedTo: "Sophia Garcia",
-    condition: "GOOD",
-    status: "ASSIGNED",
-  },
-  {
-    id: "11",
-    name: "LG UltraWide 34WP55",
-    category: "Monitor",
-    icon: <Monitor className="h-4 w-4" />,
-    serial: "DWLG-00689",
-    assignedTo: "Unassigned",
-    condition: "GOOD",
-    status: "AVAILABLE",
-  },
-  {
-    id: "12",
-    name: "iPad Pro 12.9",
-    category: "Mobile",
-    icon: <Smartphone className="h-4 w-4" />,
-    serial: "DWP-00801",
-    assignedTo: "James Wilson",
-    condition: "EXCELLENT",
-    status: "ASSIGNED",
-  },
-];
+interface AssetApiItem {
+  id: string;
+  name: string;
+  category: string;
+  serialNumber: string;
+  condition: Asset["condition"];
+  status: Asset["status"];
+  assignedTo: { employeeId: string; user: { firstName: string; lastName: string } | null } | null;
+}
+
+function assetIcon(category: string): React.ReactNode {
+  switch (category) {
+    case "LAPTOP":
+    case "Laptop":
+      return <Laptop className="h-4 w-4" />;
+    case "MONITOR":
+    case "Monitor":
+      return <Monitor className="h-4 w-4" />;
+    case "MOBILE":
+    case "Mobile":
+      return <Smartphone className="h-4 w-4" />;
+    case "PERIPHERAL":
+    case "Peripheral":
+      return <Mouse className="h-4 w-4" />;
+    case "HARDWARE":
+    case "Hardware":
+      return <HardDrive className="h-4 w-4" />;
+    default:
+      return <Package className="h-4 w-4" />;
+  }
+}
+
+function mapAsset(item: AssetApiItem): Asset {
+  const assignedTo = item.assignedTo?.user
+    ? `${item.assignedTo.user.firstName} ${item.assignedTo.user.lastName}`
+    : "Unassigned";
+  return {
+    id: item.id,
+    name: item.name,
+    category: item.category,
+    icon: assetIcon(item.category),
+    serial: item.serialNumber,
+    assignedTo,
+    condition: item.condition,
+    status: item.status,
+  };
+}
 
 const conditionVariant: Record<Asset["condition"], "success" | "info" | "warning"> = {
   EXCELLENT: "success",
@@ -232,29 +155,53 @@ const columns: ColumnDef<Asset>[] = [
   },
 ];
 
-const stats = [
-  { label: "Total Assets", value: "148", icon: <Package className="h-5 w-5" />, className: "" },
-  {
-    label: "Assigned",
-    value: "112",
-    icon: <UserCheck className="h-5 w-5" />,
-    className: "bg-success/10 text-success",
-  },
-  {
-    label: "Available",
-    value: "24",
-    icon: <PackageOpen className="h-5 w-5" />,
-    className: "bg-info/10 text-info",
-  },
-  {
-    label: "Under Maintenance",
-    value: "12",
-    icon: <Wrench className="h-5 w-5" />,
-    className: "bg-warning/10 text-warning",
-  },
-];
-
 export default function AssetsPage() {
+  const [rows, setRows] = React.useState<Asset[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState(false);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { api } = await import("@/lib/api");
+        const res = await api.get<AssetApiItem[]>("/assets");
+        if (cancelled) return;
+        setRows(res.map(mapAsset));
+        setError(false);
+      } catch {
+        if (!cancelled) setError(true);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const liveStats = [
+    { label: "Total Assets", value: String(rows.length), icon: <Package className="h-5 w-5" />, className: "" },
+    {
+      label: "Assigned",
+      value: String(rows.filter((a) => a.status === "ASSIGNED").length),
+      icon: <UserCheck className="h-5 w-5" />,
+      className: "bg-success/10 text-success",
+    },
+    {
+      label: "Available",
+      value: String(rows.filter((a) => a.status === "AVAILABLE").length),
+      icon: <PackageOpen className="h-5 w-5" />,
+      className: "bg-info/10 text-info",
+    },
+    {
+      label: "Under Maintenance",
+      value: String(rows.filter((a) => a.status === "MAINTENANCE").length),
+      icon: <Wrench className="h-5 w-5" />,
+      className: "bg-warning/10 text-warning",
+    },
+  ];
+
   return (
     <div className="mx-auto max-w-[1400px] space-y-6 animate-fade-up">
       <PageHeader
@@ -268,7 +215,7 @@ export default function AssetsPage() {
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {stats.map((s) => (
+        {liveStats.map((s) => (
           <Card key={s.label}>
             <CardContent className="flex items-start justify-between p-5">
               <div>
@@ -285,19 +232,33 @@ export default function AssetsPage() {
         ))}
       </div>
 
-      <DataTable
-        columns={columns}
-        data={assets}
-        toolbar={
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-base font-semibold">Asset Inventory</h2>
-              <p className="text-sm text-muted-foreground">All registered company assets</p>
+      {loading ? (
+        <div className="space-y-3 rounded-2xl border border-border bg-card p-4">
+          <Skeleton className="h-4 w-64" />
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+        </div>
+      ) : error ? (
+        <EmptyState
+          title="Unable to load assets"
+          description="Check that the backend API is reachable and you are signed in."
+        />
+      ) : (
+        <DataTable
+          columns={columns}
+          data={rows}
+          toolbar={
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-base font-semibold">Asset Inventory</h2>
+                <p className="text-sm text-muted-foreground">All registered company assets</p>
+              </div>
+              <Badge variant="muted">{rows.length} assets</Badge>
             </div>
-            <Badge variant="muted">{assets.length} assets</Badge>
-          </div>
-        }
-      />
+          }
+        />
+      )}
     </div>
   );
 }

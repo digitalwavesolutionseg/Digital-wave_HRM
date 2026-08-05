@@ -1,5 +1,8 @@
 "use client";
 
+"use client";
+
+import * as React from "react";
 import {
   FileText,
   FileSpreadsheet,
@@ -14,23 +17,22 @@ import {
   BarChart3,
   PieChart,
   Clock,
+  UserX,
 } from "lucide-react";
 import {
-  Bar,
-  BarChart,
-  CartesianGrid,
   Cell,
   Pie,
   PieChart as RePieChart,
   ResponsiveContainer,
   Tooltip,
-  XAxis,
-  YAxis,
 } from "recharts";
 import { PageHeader } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
+import { formatCurrency } from "@/lib/utils";
 
 type ReportType = "PDF" | "EXCEL" | "CSV";
 
@@ -106,25 +108,27 @@ const typeIcon: Record<ReportType, React.ReactNode> = {
   CSV: <FileDown className="h-4 w-4" />,
 };
 
-const headcountData = [
-  { month: "Jan", hires: 12, exits: 4 },
-  { month: "Feb", hires: 9, exits: 5 },
-  { month: "Mar", hires: 14, exits: 3 },
-  { month: "Apr", hires: 10, exits: 6 },
-  { month: "May", hires: 8, exits: 7 },
-  { month: "Jun", hires: 15, exits: 4 },
-  { month: "Jul", hires: 11, exits: 5 },
-  { month: "Aug", hires: 14, exits: 2 },
-];
+interface HeadcountResponse {
+  total: number;
+  byDepartment: { department: string; count: number }[];
+}
 
-const deptData = [
-  { name: "Engineering", value: 86, color: "#0B5FFF" },
-  { name: "Sales", value: 52, color: "#F59E0B" },
-  { name: "Marketing", value: 38, color: "#8B5CF6" },
-  { name: "Operations", value: 34, color: "#22C55E" },
-  { name: "Finance", value: 20, color: "#EF4444" },
-  { name: "HR", value: 18, color: "#3B82F6" },
-];
+interface AttendanceResponse {
+  summary: { total: number; PRESENT?: number; ABSENT?: number; LATE?: number; totalHours: number };
+}
+
+interface PayrollResponse {
+  count: number;
+  totals: { gross: number; net: number; deductions: number; tax: number };
+}
+
+interface LeaveResponse {
+  count: number;
+  totalDays: number;
+  byType: Record<string, number>;
+}
+
+const deptColors = ["#0B5FFF", "#F59E0B", "#8B5CF6", "#22C55E", "#EF4444", "#3B82F6"];
 
 const tooltipStyle = {
   borderRadius: 12,
@@ -134,6 +138,54 @@ const tooltipStyle = {
 };
 
 export default function ReportsPage() {
+  const [headcount, setHeadcount] = React.useState<HeadcountResponse | null>(null);
+  const [attendance, setAttendance] = React.useState<AttendanceResponse | null>(null);
+  const [payroll, setPayroll] = React.useState<PayrollResponse | null>(null);
+  const [leave, setLeave] = React.useState<LeaveResponse | null>(null);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState(false);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { api } = await import("@/lib/api");
+        const [hc, att, pr, lv] = await Promise.all([
+          api.get<HeadcountResponse>("/reports/headcount"),
+          api.get<AttendanceResponse>("/reports/attendance"),
+          api.get<PayrollResponse>("/reports/payroll"),
+          api.get<LeaveResponse>("/reports/leave"),
+        ]);
+        if (cancelled) return;
+        setHeadcount(hc);
+        setAttendance(att);
+        setPayroll(pr);
+        setLeave(lv);
+        setError(false);
+      } catch {
+        if (!cancelled) setError(true);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const deptData = (headcount?.byDepartment ?? []).map((d, i) => ({
+    name: d.department,
+    value: d.count,
+    color: deptColors[i % deptColors.length],
+  }));
+
+  const snapshotRows = [
+    { label: "Active employees", value: String(headcount?.total ?? 0), icon: <Users className="h-4 w-4" /> },
+    { label: "Present today", value: String(attendance?.summary?.PRESENT ?? 0), icon: <CalendarClock className="h-4 w-4" /> },
+    { label: "Late arrivals", value: String(attendance?.summary?.LATE ?? 0), icon: <Clock className="h-4 w-4" /> },
+    { label: "Absent", value: String(attendance?.summary?.ABSENT ?? 0), icon: <UserX className="h-4 w-4" /> },
+  ];
+
   return (
     <div className="mx-auto max-w-[1400px] space-y-6 animate-fade-up">
       <PageHeader
@@ -146,26 +198,52 @@ export default function ReportsPage() {
         }
       />
 
+      {loading ? (
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Card key={i}>
+              <CardHeader>
+                <Skeleton className="h-5 w-40" />
+                <Skeleton className="h-4 w-56" />
+              </CardHeader>
+              <CardContent className="h-[300px]">
+                <Skeleton className="h-full w-full" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : error ? (
+        <EmptyState
+          title="Unable to load report data"
+          description="Check that the backend API is reachable and you are signed in."
+        />
+      ) : (
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <Card>
           <CardHeader>
-            <CardTitle>Headcount Movement</CardTitle>
-            <CardDescription>Hires vs exits over the last 8 months</CardDescription>
+            <CardTitle>Payroll Summary</CardTitle>
+            <CardDescription>Current month gross, deductions and net payroll</CardDescription>
           </CardHeader>
-          <CardContent className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={headcountData} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
-                <XAxis dataKey="month" tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
-                <YAxis tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
-                <Tooltip
-                  cursor={{ fill: "rgba(0,0,0,0.03)" }}
-                  contentStyle={tooltipStyle}
-                />
-                <Bar dataKey="hires" name="Hires" fill="#0B5FFF" radius={[4, 4, 0, 0]} maxBarSize={28} />
-                <Bar dataKey="exits" name="Exits" fill="#EF4444" radius={[4, 4, 0, 0]} maxBarSize={28} />
-              </BarChart>
-            </ResponsiveContainer>
+          <CardContent className="space-y-3">
+            {[
+              { label: "Gross payroll", value: formatCurrency(payroll?.totals.gross), icon: <Wallet className="h-4 w-4" /> },
+              { label: "Deductions & tax", value: formatCurrency((payroll?.totals.deductions ?? 0) + (payroll?.totals.tax ?? 0)), icon: <TrendingDown className="h-4 w-4" /> },
+              { label: "Net payroll", value: formatCurrency(payroll?.totals.net), icon: <Plane className="h-4 w-4" /> },
+              { label: "Employees on payroll", value: String(payroll?.count ?? 0), icon: <Users className="h-4 w-4" /> },
+            ].map((row) => (
+              <div
+                key={row.label}
+                className="flex items-center gap-3 rounded-[14px] border border-border px-4 py-3"
+              >
+                <div className="flex h-9 w-9 items-center justify-center rounded-[12px] bg-primary/8 text-primary">
+                  {row.icon}
+                </div>
+                <div className="flex-1">
+                  <p className="text-xs text-muted-foreground">{row.label}</p>
+                  <p className="text-base font-semibold">{row.value}</p>
+                </div>
+              </div>
+            ))}
           </CardContent>
         </Card>
 
@@ -200,12 +278,7 @@ export default function ReportsPage() {
             <CardDescription>Key metrics at a glance</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            {[
-              { label: "Active employees", value: "248", icon: <Users className="h-4 w-4" /> },
-              { label: "Average tenure", value: "3.4 yrs", icon: <Clock className="h-4 w-4" /> },
-              { label: "Quarterly turnover", value: "4.8%", icon: <TrendingDown className="h-4 w-4" /> },
-              { label: "Open positions", value: "17", icon: <UserSearch className="h-4 w-4" /> },
-            ].map((row) => (
+            {snapshotRows.map((row) => (
               <div
                 key={row.label}
                 className="flex items-center gap-3 rounded-[14px] border border-border px-4 py-3"
@@ -222,6 +295,7 @@ export default function ReportsPage() {
           </CardContent>
         </Card>
       </div>
+      )}
 
       <div>
         <div className="mb-4 flex items-center gap-2">

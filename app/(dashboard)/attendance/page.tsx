@@ -1,3 +1,6 @@
+"use client";
+
+import * as React from "react";
 import {
   eachDayOfInterval,
   endOfMonth,
@@ -32,22 +35,25 @@ import { AttendanceTable } from "./attendance-table";
 
 type DayStatus = "present" | "late" | "absent" | "leave";
 
-const statusMeta: Record<
-  DayStatus,
-  { label: string; dot: string }
-> = {
+interface AttendanceApiItem {
+  id: string;
+  date: string;
+  status: "PRESENT" | "LATE" | "ABSENT" | "LEAVE";
+}
+
+const statusMeta: Record<DayStatus, { label: string; dot: string }> = {
   present: { label: "Present", dot: "bg-success" },
   late: { label: "Late", dot: "bg-warning" },
   absent: { label: "Absent", dot: "bg-destructive" },
   leave: { label: "Leave", dot: "bg-info" },
 };
 
-function statusForDay(day: number): DayStatus {
-  if (day % 9 === 0) return "leave";
-  if (day % 7 === 0) return "absent";
-  if (day % 5 === 3) return "late";
-  return "present";
-}
+const apiStatusToDay: Record<string, DayStatus> = {
+  PRESENT: "present",
+  LATE: "late",
+  ABSENT: "absent",
+  LEAVE: "leave",
+};
 
 function buildCalendar(today: Date) {
   const weekStartsOn = 0 as const;
@@ -59,6 +65,30 @@ function buildCalendar(today: Date) {
 }
 
 export default function AttendancePage() {
+  const [records, setRecords] = React.useState<AttendanceApiItem[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState(false);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { api } = await import("@/lib/api");
+        const res = await api.get<AttendanceApiItem[]>("/attendance");
+        if (cancelled) return;
+        setRecords(res);
+        setError(false);
+      } catch {
+        if (!cancelled) setError(true);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const today = new Date();
   const days = buildCalendar(today);
   const monthStart = startOfMonth(today);
@@ -66,12 +96,18 @@ export default function AttendancePage() {
   const rangeLabel = `${format(monthStart, "MMM d")} – ${format(monthEnd, "MMM d, yyyy")}`;
 
   const counts: Record<DayStatus, number> = { present: 0, late: 0, absent: 0, leave: 0 };
+  const statusByDate = new Map<string, DayStatus>();
+  for (const record of records) {
+    const dayStatus = apiStatusToDay[record.status];
+    if (!dayStatus) continue;
+    statusByDate.set(format(new Date(record.date), "yyyy-MM-dd"), dayStatus);
+  }
   for (const day of days) {
     if (!isSameMonth(day, today) || isAfter(day, today)) continue;
-    const status = statusForDay(Number(format(day, "d")));
-    counts[status] += 1;
+    const status = statusByDate.get(format(day, "yyyy-MM-dd"));
+    if (status) counts[status] += 1;
   }
-  const presentToday = 186;
+  const presentToday = counts.present;
 
   return (
     <div className="mx-auto max-w-[1400px] space-y-6 animate-fade-up">
@@ -94,28 +130,28 @@ export default function AttendancePage() {
         <StatCard
           title="Present Today"
           value={`${presentToday}`}
-          delta="+12"
+          delta=""
           icon={<UserCheck className="h-5 w-5" />}
           iconClassName="bg-success/10 text-success"
         />
         <StatCard
           title="On Time"
-          value="152"
-          delta="+3.2%"
+          value={String(counts.present)}
+          delta=""
           icon={<AlarmClock className="h-5 w-5" />}
           iconClassName="bg-info/10 text-info"
         />
         <StatCard
           title="Late"
-          value="21"
-          delta="+2"
+          value={String(counts.late)}
+          delta=""
           icon={<Timer className="h-5 w-5" />}
           iconClassName="bg-warning/10 text-warning"
         />
         <StatCard
           title="Absent"
-          value="13"
-          delta="-4"
+          value={String(counts.absent)}
+          delta=""
           changeType="down"
           icon={<UserX className="h-5 w-5" />}
           iconClassName="bg-destructive/10 text-destructive"
@@ -156,7 +192,7 @@ export default function AttendancePage() {
               const dayNumber = Number(format(day, "d"));
               const isWeekend = getDay(day) === 0 || getDay(day) === 6;
               const isPast = !isAfter(day, today);
-              const status = inMonth && isPast ? statusForDay(dayNumber) : null;
+              const status = inMonth && isPast ? statusByDate.get(format(day, "yyyy-MM-dd")) : undefined;
               return (
                 <div
                   key={day.toString()}
@@ -198,6 +234,11 @@ export default function AttendancePage() {
             </p>
           </div>
         </div>
+        {error && !loading ? (
+          <div className="text-sm text-muted-foreground">
+            Attendance data could not be loaded. Showing calendar from live records is unavailable.
+          </div>
+        ) : null}
         <AttendanceTable />
       </div>
     </div>
