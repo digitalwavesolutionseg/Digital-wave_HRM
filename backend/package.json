@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "description": "Digital Wave HRM - NestJS + Prisma + PostgreSQL API",
+  "engines": {
+    "node": ">=20.19"
+  },
   "scripts": {
     "start:dev": "nest start --watch",
     "build": "nest build",
