@@ -2,19 +2,71 @@
 
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input, Label } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
+import { AuthProvider, useAuth } from "@/components/auth-provider";
 
 export default function RegisterPage() {
+  return (
+    <AuthProvider>
+      <RegisterForm />
+    </AuthProvider>
+  );
+}
+
+function RegisterForm() {
+  const { login } = useAuth();
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [fullName, setFullName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [workEmail, setWorkEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [role, setRole] = useState("Employee");
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    void role;
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters.");
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/api"}/auth/register`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: workEmail, password, firstName, lastName }),
+        }
+      );
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(
+          typeof data?.message === "string" ? data.message : "Registration failed."
+        );
+      }
+      await login(workEmail, password);
+      router.push("/");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Registration failed.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
 
   return (
     <main className="flex min-h-screen items-center justify-center px-4 py-12">
@@ -34,16 +86,28 @@ export default function RegisterPage() {
             </div>
           </div>
 
-          <form className="flex flex-col gap-5" onSubmit={(e) => e.preventDefault()}>
+          <form className="flex flex-col gap-5" onSubmit={handleSubmit}>
             <div className="flex flex-col gap-2">
-              <Label htmlFor="fullName">Full Name</Label>
+              <Label htmlFor="firstName">First Name</Label>
               <Input
-                id="fullName"
+                id="firstName"
                 type="text"
-                placeholder="Jane Doe"
-                autoComplete="name"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
+                placeholder="Jane"
+                autoComplete="given-name"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+              />
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="lastName">Last Name</Label>
+              <Input
+                id="lastName"
+                type="text"
+                placeholder="Doe"
+                autoComplete="family-name"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
               />
             </div>
 
@@ -127,8 +191,14 @@ export default function RegisterPage() {
               </Select>
             </div>
 
-            <Button type="submit" className="w-full" size="lg">
-              Create account
+            {error ? (
+              <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                {error}
+              </p>
+            ) : null}
+
+            <Button type="submit" className="w-full" size="lg" disabled={submitting}>
+              {submitting ? "Creating account…" : "Create account"}
             </Button>
           </form>
 

@@ -1,8 +1,8 @@
-import { Injectable, UnauthorizedException } from "@nestjs/common";
+import { Injectable, UnauthorizedException, ConflictException } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import * as bcrypt from "bcryptjs";
 import { PrismaService } from "../../prisma/prisma.service";
-import { LoginDto, RefreshTokenDto } from "./dto/auth.dto";
+import { LoginDto, RefreshTokenDto, RegisterDto } from "./dto/auth.dto";
 
 interface JwtPayload {
   sub: string;
@@ -36,6 +36,32 @@ export class AuthService {
       data: { refreshToken: tokens.refreshToken },
     });
 
+    return {
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      user: this.sanitize(user),
+    };
+  }
+
+  async register(dto: RegisterDto) {
+    const existing = await this.prisma.user.findUnique({ where: { email: dto.email } });
+    if (existing) throw new ConflictException("Email already registered");
+
+    const passwordHash = await bcrypt.hash(dto.password, 12);
+    const user = await this.prisma.user.create({
+      data: {
+        email: dto.email,
+        password: passwordHash,
+        firstName: dto.firstName,
+        lastName: dto.lastName,
+        role: "EMPLOYEE",
+      },
+    });
+    const tokens = await this.generateTokens(user.id, user.email, user.role);
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { refreshToken: tokens.refreshToken },
+    });
     return {
       accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken,

@@ -8,7 +8,7 @@ import {
 } from "@nestjs/common";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { AuthService } from "./auth.service";
-import { LoginDto, RefreshTokenDto } from "./dto/auth.dto";
+import { LoginDto, RefreshTokenDto, RegisterDto } from "./dto/auth.dto";
 import { JwtAuthGuard } from "./jwt-auth.guard";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
 
@@ -21,6 +21,12 @@ export class AuthController {
   @HttpCode(200)
   login(@Body() dto: LoginDto) {
     return this.authService.login(dto);
+  }
+
+  @Post("register")
+  @HttpCode(201)
+  register(@Body() dto: RegisterDto) {
+    return this.authService.register(dto);
   }
 
   @Post("refresh")

@@ -1,14 +1,20 @@
 "use client";
 
 import * as React from "react";
-import { Bell, MessageSquare, Moon, Plus, Search, Sun } from "lucide-react";
+import { Bell, LogOut, MessageSquare, Moon, Plus, Search, Sun } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
 import { useSidebar } from "@/components/sidebar-context";
+import { useAuth } from "@/components/auth-provider";
+import { getInitials } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 
 export function Navbar() {
   const { theme, toggleTheme } = useTheme();
   const { collapsed } = useSidebar();
+  const { user, logout } = useAuth();
+
+  const fullName = user ? `${user.firstName} ${user.lastName}`.trim() : "Admin";
+  const initials = user ? getInitials(user.firstName, user.lastName) : "AM";
 
   return (
     <header
@@ -44,12 +50,21 @@ export function Navbar() {
 
         <div className="mx-2 h-6 w-px bg-border" />
 
-        <button className="flex items-center gap-2 rounded-[12px] p-1.5 transition-colors hover:bg-muted">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-xs font-semibold text-secondary-foreground">
-            AM
-          </div>
-          <span className="hidden text-sm font-medium sm:block">Admin</span>
-        </button>
+        <div className="relative">
+          <button className="flex items-center gap-2 rounded-[12px] p-1.5 transition-colors hover:bg-muted">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-xs font-semibold text-secondary-foreground">
+              {initials}
+            </div>
+            <span className="hidden text-sm font-medium sm:block">{fullName}</span>
+          </button>
+          <button
+            onClick={() => void logout()}
+            aria-label="Log out"
+            className="ml-1 flex h-10 w-10 items-center justify-center rounded-[12px] text-muted-foreground transition-all duration-200 hover:bg-destructive/10 hover:text-destructive active:scale-95"
+          >
+            <LogOut className="h-[18px] w-[18px]" />
+          </button>
+        </div>
       </div>
     </header>
   );

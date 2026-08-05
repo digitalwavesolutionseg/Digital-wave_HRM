@@ -5,12 +5,38 @@ import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input, Label } from "@/components/ui/input";
+import { AuthProvider, useAuth } from "@/components/auth-provider";
 
 export default function LoginPage() {
+  return (
+    <AuthProvider>
+      <LoginForm />
+    </AuthProvider>
+  );
+}
+
+function LoginForm() {
+  const { login } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    setSubmitting(true);
+    try {
+      await login(email, password);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Sign in failed.";
+      setError(message);
+    } finally {
+      setSubmitting(false);
+    }
+  }
 
   return (
     <main className="flex min-h-screen items-center justify-center px-4 py-12">
@@ -30,7 +56,7 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <form className="flex flex-col gap-5" onSubmit={(e) => e.preventDefault()}>
+          <form className="flex flex-col gap-5" onSubmit={handleSubmit}>
             <div className="flex flex-col gap-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -88,8 +114,14 @@ export default function LoginPage() {
               Remember me
             </label>
 
-            <Button type="submit" className="w-full" size="lg">
-              Sign in
+            {error ? (
+              <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                {error}
+              </p>
+            ) : null}
+
+            <Button type="submit" className="w-full" size="lg" disabled={submitting}>
+              {submitting ? "Signing in…" : "Sign in"}
             </Button>
           </form>
 
