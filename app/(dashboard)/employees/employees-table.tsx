@@ -7,7 +7,9 @@ import { DataTable } from "@/components/ui/data-table";
 import { Badge } from "@/components/ui/badge";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
+import { formatCurrency, formatDate, getInitials } from "@/lib/utils";
 
 export interface EmployeeRow {
   id: string;
@@ -76,9 +78,9 @@ const columns: ColumnDef<EmployeeRow>[] = [
   {
     id: "actions",
     header: () => <span className="sr-only">Actions</span>,
-    cell: () => (
+    cell: ({ row }) => (
       <div className="flex justify-end">
-        <Button variant="ghost" size="iconSm">
+        <Button variant="ghost" size="iconSm" onClick={() => (window.location.href = `/employees/${row.original.id}`)}>
           <Eye className="h-4 w-4" />
         </Button>
         <Button variant="ghost" size="iconSm">
@@ -92,113 +94,108 @@ const columns: ColumnDef<EmployeeRow>[] = [
   },
 ];
 
-export const employees: EmployeeRow[] = [
-  {
-    id: "EMP-1001",
-    name: "Ahmed Nasser",
-    email: "ahmed.nasser@digitalwave.solutions",
-    department: "Engineering",
-    position: "Lead Engineer",
-    status: "Active",
-    salary: 4200,
-    hireDate: "2021-03-15",
-  },
-  {
-    id: "EMP-1002",
-    name: "Sara El-Masry",
-    email: "sara.elmasry@digitalwave.solutions",
-    department: "Design",
-    position: "Product Designer",
-    status: "Active",
-    salary: 3600,
-    hireDate: "2022-06-01",
-  },
-  {
-    id: "EMP-1003",
-    name: "Omar Fahmy",
-    email: "omar.fahmy@digitalwave.solutions",
-    department: "Engineering",
-    position: "Backend Engineer",
-    status: "On Leave",
-    salary: 3400,
-    hireDate: "2021-11-20",
-  },
-  {
-    id: "EMP-1004",
-    name: "Lina Hassan",
-    email: "lina.hassan@digitalwave.solutions",
-    department: "Marketing",
-    position: "Marketing Lead",
-    status: "Active",
-    salary: 3100,
-    hireDate: "2020-09-10",
-  },
-  {
-    id: "EMP-1005",
-    name: "Karim El-Shazly",
-    email: "karim.shazly@digitalwave.solutions",
-    department: "QA",
-    position: "QA Engineer",
-    status: "Probation",
-    salary: 2600,
-    hireDate: "2024-08-01",
-  },
-  {
-    id: "EMP-1006",
-    name: "Mona Adel",
-    email: "mona.adel@digitalwave.solutions",
-    department: "HR",
-    position: "HR Specialist",
-    status: "Active",
-    salary: 2900,
-    hireDate: "2022-02-14",
-  },
-  {
-    id: "EMP-1007",
-    name: "Youssef Samir",
-    email: "youssef.samir@digitalwave.solutions",
-    department: "Sales",
-    position: "Account Manager",
-    status: "On Leave",
-    salary: 3200,
-    hireDate: "2019-05-08",
-  },
-  {
-    id: "EMP-1008",
-    name: "Nour Ezzat",
-    email: "nour.ezzat@digitalwave.solutions",
-    department: "Finance",
-    position: "Financial Analyst",
-    status: "Active",
-    salary: 3400,
-    hireDate: "2023-01-22",
-  },
-  {
-    id: "EMP-1009",
-    name: "Hassan Ibrahim",
-    email: "hassan.ibrahim@digitalwave.solutions",
-    department: "Engineering",
-    position: "Frontend Engineer",
-    status: "Active",
-    salary: 3500,
-    hireDate: "2022-10-05",
-  },
-  {
-    id: "EMP-1010",
-    name: "Dina Mostafa",
-    email: "dina.mostafa@digitalwave.solutions",
-    department: "Operations",
-    position: "Operations Manager",
-    status: "Active",
-    salary: 4000,
-    hireDate: "2018-12-01",
-  },
-];
+interface EmployeeApiItem {
+  id: string;
+  employeeId: string;
+  status: string;
+  salary: number | string;
+  joiningDate: string;
+  department: { name: string } | null;
+  position: { title: string } | null;
+  user: { firstName: string; lastName: string; email: string } | null;
+}
+
+function mapStatus(status: string): EmployeeRow["status"] {
+  switch (status) {
+    case "ACTIVE":
+      return "Active";
+    case "ON_LEAVE":
+      return "On Leave";
+    case "PENDING":
+    case "SUSPENDED":
+      return "Probation";
+    default:
+      return "Inactive";
+  }
+}
+
+function mapEmployee(item: EmployeeApiItem): EmployeeRow {
+  const name = item.user
+    ? `${item.user.firstName} ${item.user.lastName}`
+    : item.employeeId;
+  return {
+    id: item.id,
+    name,
+    email: item.user?.email ?? "—",
+    department: item.department?.name ?? "—",
+    position: item.position?.title ?? "—",
+    status: mapStatus(item.status),
+    salary: Number(item.salary),
+    hireDate: item.joiningDate,
+  };
+}
+
+function mapSortFilter(columns: ColumnDef<EmployeeRow>[], data: EmployeeRow[], search: string): EmployeeRow[] {
+  void columns;
+  const q = search.trim().toLowerCase();
+  if (!q) return data;
+  return data.filter((row) =>
+    [row.name, row.email, row.department, row.position].some((v) =>
+      v?.toLowerCase().includes(q)
+    )
+  );
+}
 
 interface EmployeesTableProps {
   toolbar?: React.ReactNode;
+  search?: string;
 }
 
-export function EmployeesTable({ toolbar }: EmployeesTableProps) {
-  return <DataTable columns={columns} data={employees} toolbar={toolbar} />;
+export function EmployeesTable({ toolbar, search }: EmployeesTableProps) {
+  const [rows, setRows] = React.useState<EmployeeRow[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState(false);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { api } = await import("@/lib/api");
+        const res = await api.get<{ data: EmployeeApiItem[] }>("/employees?limit=100");
+        if (cancelled) return;
+        setRows(res.data.map(mapEmployee));
+        setError(false);
+      } catch {
+        if (!cancelled) setError(true);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="space-y-3 rounded-2xl border border-border bg-card p-4">
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-10 w-full" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <EmptyState
+        title="Unable to load employees"
+        description="Check that the backend API is reachable and you are signed in."
+      />
+    );
+  }
+
+  const filtered = mapSortFilter(columns, rows, search ?? "");
+  return <DataTable columns={columns} data={filtered} toolbar={toolbar} />;
 }

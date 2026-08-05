@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import { Download, Filter, Plus, Search } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
@@ -6,11 +9,18 @@ import { Select } from "@/components/ui/select";
 import { EmployeesTable } from "./employees-table";
 
 export default function EmployeesPage() {
+  const [search, setSearch] = useState("");
+
   const toolbar = (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
       <div className="relative w-full sm:max-w-xs">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input placeholder="Search employees..." className="pl-9" />
+        <Input
+          placeholder="Search employees..."
+          className="pl-9"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
       </div>
       <Select defaultValue="all" className="w-full sm:w-44">
         <option value="all">All Departments</option>
@@ -45,7 +55,7 @@ export default function EmployeesPage() {
         title="Employees"
         description="Manage your workforce, profiles, and employment records."
       />
-      <EmployeesTable toolbar={toolbar} />
+      <EmployeesTable toolbar={toolbar} search={search} />
     </div>
   );
 }
