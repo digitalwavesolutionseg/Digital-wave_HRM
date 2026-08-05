@@ -1,14 +1,5 @@
-import {
-  Users,
-  UserPlus,
-  Clock,
-  CalendarClock,
-  Wallet,
-  Cake,
-  Megaphone,
-} from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
-import { StatCard } from "@/components/dashboard/stat-card";
+import { DashboardStats } from "@/components/dashboard/dashboard-stats";
 import { DashboardCharts } from "@/components/dashboard/dashboard-charts";
 import { UpcomingWidgets } from "@/components/dashboard/upcoming-widgets";
 import { QuickActions } from "@/components/dashboard/quick-actions";
@@ -24,40 +15,7 @@ export default function DashboardPage() {
       />
 
       {/* Stat cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard
-          title="Total Employees"
-          value="248"
-          delta="+12"
-          icon={<Users className="h-5 w-5" />}
-          href="/employees"
-        />
-        <StatCard
-          title="New This Month"
-          value="14"
-          delta="+18.2%"
-          icon={<UserPlus className="h-5 w-5" />}
-          iconClassName="bg-success/10 text-success"
-          href="/employees"
-        />
-        <StatCard
-          title="On Leave Today"
-          value="9"
-          delta="-2"
-          changeType="down"
-          icon={<CalendarClock className="h-5 w-5" />}
-          iconClassName="bg-warning/10 text-warning"
-          href="/leave"
-        />
-        <StatCard
-          title="Monthly Payroll"
-          value="$412,580"
-          delta="+4.1%"
-          icon={<Wallet className="h-5 w-5" />}
-          iconClassName="bg-info/10 text-info"
-          href="/payroll"
-        />
-      </div>
+      <DashboardStats />
 
       {/* Charts row */}
       <DashboardCharts />
