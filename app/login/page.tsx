@@ -43,8 +43,8 @@ function LoginForm() {
       <Card className="w-full max-w-md animate-fade-up">
         <CardContent className="flex flex-col gap-8 p-8 sm:p-10">
           <div className="flex flex-col items-center gap-5 text-center">
-            <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-primary text-xl font-bold tracking-tight text-primary-foreground shadow-[0_6px_20px_rgba(11,95,255,0.25)]">
-              DW
+            <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-xl bg-white shadow-[0_6px_20px_rgba(11,95,255,0.25)]">
+              <img src="/logo.png" alt="Digital Wave" className="h-12 w-12 object-contain" />
             </div>
             <div className="flex flex-col gap-1.5">
               <h1 className="text-2xl font-semibold tracking-tight text-foreground">

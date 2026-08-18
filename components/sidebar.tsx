@@ -12,9 +12,12 @@ import {
 import { cn } from "@/lib/utils";
 import { navSections, settingsItem } from "@/lib/navigation";
 import { useSidebar } from "@/components/sidebar-context";
+import { useAuth } from "@/components/auth-provider";
+import { getInitials } from "@/lib/utils";
 
 export function Sidebar() {
   const { collapsed, setCollapsed } = useSidebar();
+  const { user } = useAuth();
   const pathname = usePathname();
   const [search, setSearch] = React.useState("");
   const [favorites, setFavorites] = React.useState<string[]>(["", "/employees"]);
@@ -56,8 +59,8 @@ export function Sidebar() {
     >
       {/* Brand */}
       <div className="flex h-16 items-center gap-2.5 border-b border-sidebar-border px-4">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-sm font-bold text-primary-foreground">
-          DW
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white shadow-sm">
+          <img src="/logo.png" alt="Digital Wave" className="h-8 w-8 object-contain" />
         </div>
         {!collapsed && (
           <motion.div
@@ -157,12 +160,14 @@ export function Sidebar() {
       <div className="border-t border-sidebar-border p-3">
         <div className="flex items-center gap-3 rounded-xl p-2 transition-colors hover:bg-muted">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-semibold text-secondary-foreground">
-            AM
+            {user ? getInitials(user.firstName, user.lastName) : "AM"}
           </div>
           {!collapsed && (
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium">Admin User</p>
-              <p className="truncate text-xs text-muted-foreground">Super Admin</p>
+              <p className="truncate text-sm font-medium">{user ? `${user.firstName} ${user.lastName}`.trim() : "Admin User"}</p>
+              <p className="truncate text-xs text-muted-foreground">
+                {user?.role?.replaceAll("_", " ") ?? "Super Admin"}
+              </p>
             </div>
           )}
         </div>
