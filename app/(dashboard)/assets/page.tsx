@@ -22,6 +22,7 @@ import { DataTable } from "@/components/ui/data-table";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
+import { AssignAssetDialog } from "./assign-asset-dialog";
 
 type Asset = {
   id: string;
@@ -159,6 +160,8 @@ export default function AssetsPage() {
   const [rows, setRows] = React.useState<Asset[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState(false);
+  const [assignOpen, setAssignOpen] = React.useState(false);
+  const [refreshKey, setRefreshKey] = React.useState(0);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -178,7 +181,7 @@ export default function AssetsPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [refreshKey]);
 
   const liveStats = [
     { label: "Total Assets", value: String(rows.length), icon: <Package className="h-5 w-5" />, className: "" },
@@ -208,7 +211,7 @@ export default function AssetsPage() {
         title="Company Assets"
         description="Track and manage hardware and equipment across the organization."
         actions={
-          <Button>
+          <Button onClick={() => setAssignOpen(true)}>
             <Plus className="h-4 w-4" /> Assign Asset
           </Button>
         }
@@ -259,6 +262,12 @@ export default function AssetsPage() {
           }
         />
       )}
+
+      <AssignAssetDialog
+        open={assignOpen}
+        onOpenChange={setAssignOpen}
+        onAssigned={() => setRefreshKey((k) => k + 1)}
+      />
     </div>
   );
 }

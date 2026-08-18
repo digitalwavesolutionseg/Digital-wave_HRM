@@ -2,7 +2,8 @@
 
 import * as React from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Search } from "lucide-react";
+import { toast } from "sonner";
+import { Pencil, Search, Trash2 } from "lucide-react";
 import { DataTable } from "@/components/ui/data-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -24,13 +25,15 @@ interface PositionRow {
   maxSalary: number;
 }
 
-interface PositionApiItem {
+export interface PositionApiItem {
   id: string;
   title: string;
+  departmentId: string;
   department: { id: string; name: string } | null;
   employmentType: EmploymentType;
   minSalary: number | string | null;
   maxSalary: number | string | null;
+  description?: string | null;
   _count: { employees: number } | undefined;
 }
 
@@ -70,37 +73,100 @@ function mapPosition(item: PositionApiItem): PositionRow {
   };
 }
 
-function positionStatus(): string {
-  return "Open";
+function makeColumns(onEdit: (item: PositionApiItem) => void, onDelete: (id: string) => void): ColumnDef<PositionRow>[] {
+  return [
+    {
+      accessorKey: "title",
+      header: "Title",
+      cell: ({ row }) => (
+        <div>
+          <p className="font-medium text-foreground">{row.original.title}</p>
+          <p className="text-xs text-muted-foreground">{row.original.id}</p>
+        </div>
+      ),
+    },
+    {
+      accessorKey: "department",
+      header: "Department",
+      cell: ({ row }) => <span className="text-sm">{row.original.department}</span>,
+    },
+    {
+      accessorKey: "type",
+      header: "Employment Type",
+      cell: ({ row }) => (
+        <Badge variant={typeVariant[row.original.type] ?? "default"}>{row.original.type}</Badge>
+      ),
+    },
+    {
+      accessorKey: "openings",
+      header: "Openings",
+      cell: ({ row }) => (
+        <Badge variant="outline">
+          {row.original.openings} {row.original.openings === 1 ? "slot" : "slots"}
+        </Badge>
+      ),
+    },
+    {
+      id: "salary",
+      header: "Salary Range",
+      cell: ({ row }) => (
+        <span className="text-sm font-medium text-foreground">
+          {formatCurrency(row.original.minSalary)} – {formatCurrency(row.original.maxSalary)}
+        </span>
+      ),
+    },
+    {
+      id: "actions",
+      header: () => <span className="sr-only">Actions</span>,
+      cell: ({ row }) => (
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="iconSm"
+            aria-label="Edit"
+            onClick={() => onEdit(row.original as unknown as PositionApiItem)}
+          >
+            <Pencil className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="iconSm"
+            aria-label="Delete"
+            className="text-destructive"
+            onClick={() => onDelete(row.original.id)}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      ),
+    },
+  ];
 }
 
-const departments = [
-  "All Departments",
-  "Engineering",
-  "Sales",
-  "Marketing",
-  "Operations",
-  "Human Resources",
-  "Finance",
-];
+interface PositionsTableProps {
+  refreshKey?: number;
+  onEdit?: (item: PositionApiItem) => void;
+  onChanged?: () => void;
+}
 
-const statuses = ["All Statuses", "Open", "On Hold", "Filled", "Paused"];
-
-export function PositionsTable() {
+export function PositionsTable({ refreshKey, onEdit, onChanged }: PositionsTableProps) {
   const [search, setSearch] = React.useState("");
   const [department, setDepartment] = React.useState("All Departments");
   const [rows, setRows] = React.useState<PositionRow[]>([]);
+  const [items, setItems] = React.useState<PositionApiItem[]>([]);
   const [departmentOptions, setDepartmentOptions] = React.useState<string[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState(false);
 
   React.useEffect(() => {
     let cancelled = false;
+    setLoading(true);
     (async () => {
       try {
         const { api } = await import("@/lib/api");
         const res = await api.get<PositionApiItem[]>("/positions");
         if (cancelled) return;
+        setItems(res);
         setRows(res.map(mapPosition));
         setDepartmentOptions([
           "All Departments",
@@ -116,7 +182,30 @@ export function PositionsTable() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [refreshKey]);
+
+  const handleDelete = React.useCallback(
+    async (id: string) => {
+      if (!window.confirm("Delete this position?")) return;
+      try {
+        const { api } = await import("@/lib/api");
+        await api.del(`/positions/${id}`);
+        toast.success("Position deleted");
+        onChanged?.();
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Delete failed");
+      }
+    },
+    [onChanged]
+  );
+
+  const handleEdit = React.useCallback(
+    (item: PositionApiItem) => {
+      const found = items.find((i) => i.id === item.id);
+      onEdit?.(found ?? item);
+    },
+    [items, onEdit]
+  );
 
   const filtered = rows.filter((position) => {
     const matchesSearch =
@@ -162,53 +251,7 @@ export function PositionsTable() {
     </div>
   );
 
-  const columns: ColumnDef<PositionRow>[] = [
-    {
-      accessorKey: "title",
-      header: "Title",
-      cell: ({ row }) => (
-        <div>
-          <p className="font-medium text-foreground">{row.original.title}</p>
-          <p className="text-xs text-muted-foreground">{row.original.id}</p>
-        </div>
-      ),
-    },
-    {
-      accessorKey: "department",
-      header: "Department",
-      cell: ({ row }) => <span className="text-sm">{row.original.department}</span>,
-    },
-    {
-      accessorKey: "type",
-      header: "Employment Type",
-      cell: ({ row }) => (
-        <Badge variant={typeVariant[row.original.type] ?? "default"}>{row.original.type}</Badge>
-      ),
-    },
-    {
-      accessorKey: "openings",
-      header: "Openings",
-      cell: ({ row }) => (
-        <Badge variant="outline">
-          {row.original.openings} {row.original.openings === 1 ? "slot" : "slots"}
-        </Badge>
-      ),
-    },
-    {
-      id: "salary",
-      header: "Salary Range",
-      cell: ({ row }) => (
-        <span className="text-sm font-medium text-foreground">
-          {formatCurrency(row.original.minSalary)} – {formatCurrency(row.original.maxSalary)}
-        </span>
-      ),
-    },
-    {
-      accessorKey: "status",
-      header: "Status",
-      cell: () => <Badge variant="success">Open</Badge>,
-    },
-  ];
+  const columns = React.useMemo(() => makeColumns(handleEdit, handleDelete), [handleEdit, handleDelete]);
 
   if (loading) {
     return (

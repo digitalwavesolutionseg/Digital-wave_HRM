@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Building2, Plus, Search, Users, UserPlus } from "lucide-react";
+import { Building2, Plus, Search, Users } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { PageHeader } from "@/components/ui/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,19 +9,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar } from "@/components/ui/avatar";
 import { Select } from "@/components/ui/select";
-import { Input, Label, Textarea } from "@/components/ui/input";
+import { Input } from "@/components/ui/input";
 import { DataTable } from "@/components/ui/data-table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { JobPostFormDialog } from "./job-post-form-dialog";
+import { CandidateFormDialog } from "./candidate-form-dialog";
 
 type JobStatus = "OPEN" | "ON_HOLD" | "CLOSED";
 
@@ -39,7 +33,6 @@ interface PipelineCandidate {
   name: string;
   role: string;
   applied: string;
-  score: number;
 }
 
 interface PipelineStage {
@@ -100,7 +93,6 @@ function buildPipeline(candidates: CandidateApiItem[]): PipelineStage[] {
       name: c.name,
       role: c.jobPost?.title ?? "Candidate",
       applied: c.email ?? "—",
-      score: 0,
     });
     grouped.set(key, list);
   }
@@ -124,10 +116,17 @@ function JobStatusBadge({ status }: { status: JobStatus }) {
 
 export default function RecruitmentPage() {
   const [postOpen, setPostOpen] = React.useState(false);
+  const [candidateOpen, setCandidateOpen] = React.useState(false);
+  const [candidateStage, setCandidateStage] = React.useState("APPLIED");
   const [jobPosts, setJobPosts] = React.useState<JobPost[]>([]);
+  const [rawJobPosts, setRawJobPosts] = React.useState<JobPostApiItem[]>([]);
   const [pipeline, setPipeline] = React.useState<PipelineStage[]>([]);
+  const [candidateSearch, setCandidateSearch] = React.useState("");
+  const [postSearch, setPostSearch] = React.useState("");
+  const [postStatus, setPostStatus] = React.useState("all");
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState(false);
+  const [refreshKey, setRefreshKey] = React.useState(0);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -139,6 +138,7 @@ export default function RecruitmentPage() {
           api.get<CandidateApiItem[]>("/recruitment/candidates"),
         ]);
         if (cancelled) return;
+        setRawJobPosts(postsRes);
         setJobPosts(postsRes.map(mapJobPost));
         setPipeline(buildPipeline(candidatesRes));
         setError(false);
@@ -151,7 +151,30 @@ export default function RecruitmentPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [refreshKey]);
+
+  const filteredPipeline = React.useMemo(() => {
+    if (!candidateSearch.trim()) return pipeline;
+    const q = candidateSearch.trim().toLowerCase();
+    return pipeline.map((stage) => ({
+      ...stage,
+      candidates: stage.candidates.filter((c) => c.name.toLowerCase().includes(q)),
+    }));
+  }, [pipeline, candidateSearch]);
+
+  const filteredPosts = React.useMemo(() => {
+    return jobPosts.filter((p) => {
+      const matchesSearch =
+        !postSearch.trim() || p.title.toLowerCase().includes(postSearch.toLowerCase());
+      const matchesStatus = postStatus === "all" || p.status === postStatus;
+      return matchesSearch && matchesStatus;
+    });
+  }, [jobPosts, postSearch, postStatus]);
+
+  const openCandidateDialog = (stage: string) => {
+    setCandidateStage(stage);
+    setCandidateOpen(true);
+  };
 
   const columns = React.useMemo<ColumnDef<JobPost>[]>(
     () => [
@@ -240,7 +263,7 @@ export default function RecruitmentPage() {
           <CardContent className="p-5">
             <p className="text-sm font-medium text-muted-foreground">Interviews</p>
             <p className="mt-2 text-3xl font-bold tracking-tight">
-              {pipeline.find((s) => s.id === "interview")?.candidates.length ?? 0}
+              {pipeline.find((s) => s.id === "INTERVIEW")?.candidates.length ?? 0}
             </p>
           </CardContent>
         </Card>
@@ -260,7 +283,7 @@ export default function RecruitmentPage() {
             <CardTitle>Hiring Pipeline</CardTitle>
             <CardDescription>Drag candidates across stages as they advance</CardDescription>
           </div>
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={() => setCandidateSearch("")} disabled={!candidateSearch}>
             <Search className="h-4 w-4" />
             Search candidates
           </Button>
@@ -283,7 +306,7 @@ export default function RecruitmentPage() {
             />
           ) : (
             <div className="flex gap-4 overflow-x-auto pb-2">
-            {pipeline.map((stage) => (
+            {filteredPipeline.map((stage) => (
               <div key={stage.id} className="w-[260px] shrink-0 rounded-[16px] bg-muted/50 p-3">
                 <div className="mb-3 flex items-center justify-between px-1">
                   <div className="flex items-center gap-2">
@@ -305,13 +328,12 @@ export default function RecruitmentPage() {
                           <p className="truncate text-xs text-muted-foreground">{candidate.role}</p>
                           <div className="mt-2 flex items-center justify-between">
                             <span className="text-[11px] text-muted-foreground">{candidate.applied}</span>
-                            <Badge variant={candidate.score >= 85 ? "success" : "secondary"}>{candidate.score}%</Badge>
                           </div>
                         </div>
                       </div>
                     </div>
                   ))}
-                  <Button variant="ghost" size="sm" className="w-full border border-dashed border-border text-muted-foreground">
+                  <Button variant="ghost" size="sm" className="w-full border border-dashed border-border text-muted-foreground" onClick={() => openCandidateDialog(stage.id)}>
                     <Plus className="h-4 w-4" />
                     Add candidate
                   </Button>
@@ -338,20 +360,20 @@ export default function RecruitmentPage() {
         ) : (
         <DataTable
           columns={columns}
-          data={jobPosts}
+          data={filteredPosts}
           pagination
           toolbar={
             <div className="flex items-center gap-3">
               <div className="relative w-full max-w-xs">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input className="pl-9" placeholder="Search job posts..." />
+                <Input className="pl-9" placeholder="Search job posts..." value={postSearch} onChange={(e) => setPostSearch(e.target.value)} />
               </div>
               <div className="w-40">
-                <Select defaultValue="all">
+                <Select value={postStatus} onChange={(e) => setPostStatus(e.target.value)}>
                   <option value="all">All statuses</option>
-                  <option value="open">Open</option>
-                  <option value="hold">On Hold</option>
-                  <option value="closed">Closed</option>
+                  <option value="OPEN">Open</option>
+                  <option value="ON_HOLD">On Hold</option>
+                  <option value="CLOSED">Closed</option>
                 </Select>
               </div>
             </div>
@@ -360,49 +382,19 @@ export default function RecruitmentPage() {
         )}
       </div>
 
-      <Dialog open={postOpen} onOpenChange={setPostOpen}>
-        <DialogHeader>
-          <DialogTitle>New Job Post</DialogTitle>
-          <DialogDescription>Create a job posting to start collecting applications.</DialogDescription>
-        </DialogHeader>
-        <DialogContent>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Job title</Label>
-              <Input placeholder="e.g. Senior Frontend Engineer" />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Department</Label>
-                <Select defaultValue="engineering">
-                  <option value="engineering">Engineering</option>
-                  <option value="design">Design</option>
-                  <option value="sales">Sales</option>
-                  <option value="marketing">Marketing</option>
-                  <option value="people">People</option>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Openings</Label>
-                <Input type="number" defaultValue={1} min={1} />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label>Description</Label>
-              <Textarea placeholder="Describe the role, responsibilities and requirements..." />
-            </div>
-          </div>
-        </DialogContent>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setPostOpen(false)}>
-            Cancel
-          </Button>
-          <Button onClick={() => setPostOpen(false)}>
-            <UserPlus className="h-4 w-4" />
-            Publish Post
-          </Button>
-        </DialogFooter>
-      </Dialog>
+      <JobPostFormDialog
+        open={postOpen}
+        onOpenChange={setPostOpen}
+        onPublished={() => setRefreshKey((k) => k + 1)}
+      />
+
+      <CandidateFormDialog
+        open={candidateOpen}
+        onOpenChange={setCandidateOpen}
+        defaultStage={candidateStage}
+        jobPosts={rawJobPosts.map((j) => ({ id: j.id, title: j.title }))}
+        onAdded={() => setRefreshKey((k) => k + 1)}
+      />
     </div>
   );
 }

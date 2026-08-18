@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "../../prisma/prisma.service";
+import { CreateAssetDto, UpdateAssetDto, AssignAssetDto } from "./dto/asset.dto";
 
 @Injectable()
 export class AssetsService {
@@ -33,7 +34,7 @@ export class AssetsService {
     });
   }
 
-  create(dto: any) {
+  create(dto: CreateAssetDto) {
     return this.prisma.asset.create({
       data: {
         name: dto.name,
@@ -45,7 +46,7 @@ export class AssetsService {
     });
   }
 
-  async update(id: string, dto: any) {
+  async update(id: string, dto: UpdateAssetDto) {
     await this.ensureExists(id);
     return this.prisma.asset.update({
       where: { id },
@@ -59,7 +60,7 @@ export class AssetsService {
     });
   }
 
-  async assign(id: string, dto: any) {
+  async assign(id: string, dto: AssignAssetDto) {
     await this.ensureExists(id);
     return this.prisma.asset.update({
       where: { id },

@@ -1,5 +1,6 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable, NotFoundException, ForbiddenException } from "@nestjs/common";
 import { PrismaService } from "../../prisma/prisma.service";
+import { Role } from "../../common/decorators/roles.decorator";
 import { CreateEmployeeDto } from "./dto/create-employee.dto";
 import { UpdateEmployeeDto } from "./dto/update-employee.dto";
 
@@ -73,7 +74,35 @@ export class EmployeesService {
     };
   }
 
-  findOne(id: string) {
+  async findOne(id: string, user?: any) {
+    if (user?.role === Role.EMPLOYEE) {
+      const own = await this.prisma.employee.findFirst({
+        where: { id, userId: user.id },
+        select: { id: true },
+      });
+      if (!own) {
+        throw new ForbiddenException("You can only view your own employee record");
+      }
+      return this.prisma.employee.findUnique({
+        where: { id },
+        include: {
+          department: true,
+          position: true,
+          manager: this.managerSelect,
+          user: {
+            select: {
+              id: true,
+              email: true,
+              firstName: true,
+              lastName: true,
+              avatarUrl: true,
+            },
+          },
+          attended: true,
+        },
+      });
+    }
+
     return this.prisma.employee.findUnique({
       where: { id },
       include: {

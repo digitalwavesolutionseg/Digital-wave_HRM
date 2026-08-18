@@ -18,6 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { DepartmentsTable } from "./departments-table";
+import { DepartmentFormDialog } from "./department-form-dialog";
 
 interface DepartmentCard {
   name: string;
@@ -30,6 +31,7 @@ interface DepartmentCard {
 interface DepartmentApiItem {
   id: string;
   name: string;
+  description?: string | null;
   manager: { employeeId: string; user: { firstName: string; lastName: string } | null } | null;
   _count: { employees: number; positions: number };
 }
@@ -53,9 +55,13 @@ export default function DepartmentsPage() {
   const [cards, setCards] = React.useState<DepartmentCard[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState(false);
+  const [dialogOpen, setDialogOpen] = React.useState(false);
+  const [editing, setEditing] = React.useState<DepartmentApiItem | null>(null);
+  const [refreshKey, setRefreshKey] = React.useState(0);
 
   React.useEffect(() => {
     let cancelled = false;
+    setLoading(true);
     (async () => {
       try {
         const { api } = await import("@/lib/api");
@@ -72,7 +78,7 @@ export default function DepartmentsPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [refreshKey]);
 
   return (
     <div className="mx-auto max-w-[1400px] space-y-6 animate-fade-up">
@@ -80,7 +86,7 @@ export default function DepartmentsPage() {
         title="Departments"
         description="Organize your teams, budgets, and reporting lines."
         actions={
-          <Button>
+          <Button onClick={() => { setEditing(null); setDialogOpen(true); }}>
             <Plus className="h-4 w-4" /> Add Department
           </Button>
         }
@@ -151,8 +157,19 @@ export default function DepartmentsPage() {
             </p>
           </div>
         </div>
-        <DepartmentsTable />
+        <DepartmentsTable
+          refreshKey={refreshKey}
+          onEdit={(item) => { setEditing(item); setDialogOpen(true); }}
+          onChanged={() => setRefreshKey((k) => k + 1)}
+        />
       </div>
+
+      <DepartmentFormDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        editing={editing}
+        onSaved={() => setRefreshKey((k) => k + 1)}
+      />
     </div>
   );
 }

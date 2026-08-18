@@ -130,20 +130,23 @@ enum AnnouncementCategory {
 }
 
 model User {
-  id           String        @id @default(cuid())
-  email        String        @unique
-  password     String
-  firstName    String
-  lastName     String
-  role         Role          @default(EMPLOYEE)
-  avatarUrl    String?
-  isActive     Boolean       @default(true)
-  refreshToken String?
-  employee     Employee?
-  interviews   Interview[]
-  announcements Announcement[]
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  id                      String        @id @default(cuid())
+  email                   String        @unique
+  password                String
+  firstName               String
+  lastName                String
+  role                    Role          @default(EMPLOYEE)
+  avatarUrl               String?
+  isActive                Boolean       @default(true)
+  refreshToken            String?
+  passwordResetOtp        String?
+  passwordResetOtpExpires DateTime?
+  employee                Employee?
+  interviews              Interview[]
+  announcements           Announcement[]
+  auditLogs               AuditLog[]
+  createdAt               DateTime      @default(now())
+  updatedAt               DateTime      @updatedAt
 }
 
 model Employee {
@@ -405,4 +408,21 @@ model CompanySetting {
   description String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  actor      User?    @relation(fields: [actorId], references: [id])
+  action     String
+  entity     String
+  entityId   String?
+  metadata   Json?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  @@index([actorId])
+  @@index([entity])
+  @@index([createdAt])
 }

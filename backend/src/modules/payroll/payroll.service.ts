@@ -1,11 +1,15 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { EmployeeStatus, PayrollStatus } from "../../generated/prisma/client";
 import { PrismaService } from "../../prisma/prisma.service";
+import { AuditService } from "../audit/audit.service";
 import { GeneratePayrollDto } from "./dto/generate-payroll.dto";
 
 @Injectable()
 export class PayrollService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private auditService: AuditService
+  ) {}
 
   private employeeSelect: any = {
     select: {
@@ -69,18 +73,34 @@ export class PayrollService {
       records.push(record);
     }
 
+    await this.auditService.record({
+      action: "payroll.generate",
+      entity: "payroll",
+      metadata: { month: dto.month, year: dto.year, count: records.length },
+    });
+
     return { count: records.length, records };
   }
 
-  async markPaid(id: string) {
+  async markPaid(id: string, user?: any) {
     await this.ensureExists(id);
-    return this.prisma.payroll.update({
+    const record = await this.prisma.payroll.update({
       where: { id },
       data: { status: PayrollStatus.PAID, paidAt: new Date() },
       include: {
         employee: this.employeeSelect,
       },
     });
+
+    await this.auditService.record({
+      actorId: user?.id,
+      action: "payroll.mark-paid",
+      entity: "payroll",
+      entityId: id,
+      metadata: { employeeId: record.employeeId },
+    });
+
+    return record;
   }
 
   history(employeeId: string) {

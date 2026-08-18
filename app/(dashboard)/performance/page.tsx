@@ -13,13 +13,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { cn } from "@/lib/utils";
+import { ReviewFormDialog } from "./review-form-dialog";
 
 type ReviewStatus = "DRAFT" | "SUBMITTED" | "COMPLETED";
 
 interface Review {
   id: string;
   employee: string;
-  role: string;
+  employeeCode: string;
   period: string;
   rating: number;
   reviewer: string;
@@ -58,7 +59,7 @@ function mapReview(item: ReviewApiItem): Review {
   return {
     id: item.id,
     employee: personName(item.employee),
-    role: "—",
+    employeeCode: item.employee?.employeeId ?? "—",
     period: item.period,
     rating: Number(item.rating ?? 0),
     reviewer: personName(item.reviewer),
@@ -110,6 +111,8 @@ export default function PerformancePage() {
   const [goals, setGoals] = React.useState<EmployeeGoal[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState(false);
+  const [reviewOpen, setReviewOpen] = React.useState(false);
+  const [refreshKey, setRefreshKey] = React.useState(0);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -133,7 +136,7 @@ export default function PerformancePage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [refreshKey]);
 
   const columns = React.useMemo<ColumnDef<Review>[]>(
     () => [
@@ -145,7 +148,7 @@ export default function PerformancePage() {
             <Avatar name={row.original.employee} size="sm" />
             <div>
               <p className="font-medium text-foreground">{row.original.employee}</p>
-              <p className="text-xs text-muted-foreground">{row.original.role}</p>
+              <p className="text-xs text-muted-foreground">{row.original.employeeCode}</p>
             </div>
           </div>
         ),
@@ -175,15 +178,6 @@ export default function PerformancePage() {
         header: "Status",
         cell: ({ row }) => <ReviewStatusBadge status={row.original.status} />,
       },
-      {
-        id: "actions",
-        header: "",
-        cell: () => (
-          <Button variant="ghost" size="sm">
-            Open
-          </Button>
-        ),
-      },
     ],
     []
   );
@@ -202,8 +196,7 @@ export default function PerformancePage() {
         description="Track review cycles, ratings and goal progress across the organization."
         actions={
           <>
-            <Button variant="outline">Schedule Review</Button>
-            <Button>
+            <Button onClick={() => setReviewOpen(true)}>
               <Plus className="h-4 w-4" />
               New Review
             </Button>
@@ -299,6 +292,12 @@ export default function PerformancePage() {
           </div>
         </CardContent>
       </Card>
+
+      <ReviewFormDialog
+        open={reviewOpen}
+        onOpenChange={setReviewOpen}
+        onCreated={() => setRefreshKey((k) => k + 1)}
+      />
     </div>
   );
 }

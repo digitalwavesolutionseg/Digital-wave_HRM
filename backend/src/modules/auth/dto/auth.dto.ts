@@ -31,3 +31,21 @@ export class RegisterDto {
   @IsNotEmpty()
   lastName: string;
 }
+
+export class ForgotPasswordDto {
+  @IsEmail()
+  email: string;
+}
+
+export class ResetPasswordDto {
+  @IsEmail()
+  email: string;
+
+  @IsString()
+  @IsNotEmpty()
+  otp: string;
+
+  @IsString()
+  @MinLength(8)
+  password: string;
+}

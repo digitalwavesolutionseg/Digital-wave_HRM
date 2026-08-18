@@ -3,6 +3,7 @@
 import * as React from "react";
 import { BookOpen, Clock, Plus, Users } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
+import { toast } from "sonner";
 import { PageHeader } from "@/components/ui/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,7 +12,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { DataTable } from "@/components/ui/data-table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
-import { cn } from "@/lib/utils";
+import { TrainingProgramFormDialog } from "./training-program-form-dialog";
 
 type ProgramStatus = "ACTIVE" | "UPCOMING" | "COMPLETED";
 
@@ -21,7 +22,6 @@ interface TrainingProgram {
   category: string;
   duration: string;
   enrolled: number;
-  progress: number;
   status: ProgramStatus;
   instructor: string;
 }
@@ -44,7 +44,6 @@ function mapProgram(item: TrainingApiItem): TrainingProgram {
     category: item.category,
     duration: item.durationHours ? `${item.durationHours} hours` : "—",
     enrolled: item._count?.enrollments ?? 0,
-    progress: 0,
     status: item.status,
     instructor: item.instructor ?? "—",
   };
@@ -60,87 +59,17 @@ function ProgramStatusBadge({ status }: { status: ProgramStatus }) {
   return <Badge variant={variant}>{label}</Badge>;
 }
 
-function ProgressBar({ value, className }: { value: number; className?: string }) {
-  return (
-    <div className={cn("h-2 w-full overflow-hidden rounded-full bg-muted", className)}>
-      <div
-        className={cn(
-          "h-full rounded-full",
-          value >= 75 ? "bg-success" : value >= 50 ? "bg-primary" : "bg-warning"
-        )}
-        style={{ width: `${value}%` }}
-      />
-    </div>
-  );
-}
-
 export default function TrainingPage() {
-  const columns = React.useMemo<ColumnDef<TrainingProgram>[]>(
-    () => [
-      {
-        accessorKey: "name",
-        header: "Course",
-        cell: ({ row }) => (
-          <div>
-            <p className="font-medium text-foreground">{row.original.name}</p>
-            <p className="text-xs text-muted-foreground">{row.original.id}</p>
-          </div>
-        ),
-      },
-      {
-        accessorKey: "instructor",
-        header: "Instructor",
-        cell: ({ row }) => (
-          <div className="flex items-center gap-2">
-            <Avatar name={row.original.instructor} size="sm" />
-            <span>{row.original.instructor}</span>
-          </div>
-        ),
-      },
-      {
-        accessorKey: "enrolled",
-        header: "Enrolled",
-        cell: ({ row }) => (
-          <div className="flex items-center gap-1.5">
-            <Users className="h-4 w-4 text-muted-foreground" />
-            <span className="tabular-nums">{row.original.enrolled}</span>
-          </div>
-        ),
-      },
-      {
-        accessorKey: "progress",
-        header: "Completion Rate",
-        cell: ({ row }) => (
-          <div className="flex items-center gap-3">
-            <ProgressBar value={row.original.progress} className="w-24" />
-            <span className="text-sm font-medium tabular-nums">{row.original.progress}%</span>
-          </div>
-        ),
-      },
-      {
-        accessorKey: "status",
-        header: "Status",
-        cell: ({ row }) => <ProgramStatusBadge status={row.original.status} />,
-      },
-      {
-        id: "actions",
-        header: "",
-        cell: () => (
-          <Button variant="ghost" size="sm">
-            View
-          </Button>
-        ),
-      },
-    ],
-    []
-  );
-
   const [programs, setPrograms] = React.useState<TrainingProgram[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState(false);
+  const [dialogOpen, setDialogOpen] = React.useState(false);
+  const [refreshKey, setRefreshKey] = React.useState(0);
+  const [enrollingId, setEnrollingId] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     let cancelled = false;
+    setLoading(true);
     (async () => {
       try {
         const { api } = await import("@/lib/api");
@@ -157,7 +86,87 @@ export default function TrainingPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [refreshKey]);
+
+  const handleEnroll = async (id: string) => {
+    setEnrollingId(id);
+    try {
+      const { api } = await import("@/lib/api");
+      await api.post(`/training/${id}/enroll`, {});
+      toast.success("Enrolled in program");
+      setRefreshKey((k) => k + 1);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Enrollment failed");
+    } finally {
+      setEnrollingId(null);
+    }
+  };
+
+  const columns = React.useMemo<ColumnDef<TrainingProgram>[]>(
+    () => [
+      {
+        accessorKey: "name",
+        header: "Course",
+        cell: ({ row }) => (
+          <div>
+            <p className="font-medium text-foreground">{row.original.name}</p>
+            <p className="text-xs text-muted-foreground">{row.original.id}</p>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "category",
+        header: "Category",
+        cell: ({ row }) => <Badge variant="secondary">{row.original.category}</Badge>,
+      },
+      {
+        accessorKey: "instructor",
+        header: "Instructor",
+        cell: ({ row }) => (
+          <div className="flex items-center gap-2">
+            <Avatar name={row.original.instructor} size="sm" />
+            <span>{row.original.instructor}</span>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "duration",
+        header: "Duration",
+        cell: ({ row }) => <span className="text-sm text-muted-foreground">{row.original.duration}</span>,
+      },
+      {
+        accessorKey: "enrolled",
+        header: "Enrolled",
+        cell: ({ row }) => (
+          <div className="flex items-center gap-1.5">
+            <Users className="h-4 w-4 text-muted-foreground" />
+            <span className="tabular-nums">{row.original.enrolled}</span>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "status",
+        header: "Status",
+        cell: ({ row }) => <ProgramStatusBadge status={row.original.status} />,
+      },
+      {
+        id: "actions",
+        header: "",
+        cell: ({ row }) => (
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={enrollingId === row.original.id}
+            onClick={() => handleEnroll(row.original.id)}
+          >
+            <BookOpen className="h-4 w-4" />
+            {enrollingId === row.original.id ? "Enrolling..." : "Enroll"}
+          </Button>
+        ),
+      },
+    ],
+    [enrollingId]
+  );
 
   const featured = programs.slice(0, 4);
 
@@ -167,13 +176,10 @@ export default function TrainingPage() {
         title="Training & Development"
         description="Upskill your team with curated programs, courses and certifications."
         actions={
-          <>
-            <Button variant="outline">Catalog</Button>
-            <Button>
-              <Plus className="h-4 w-4" />
-              New Program
-            </Button>
-          </>
+          <Button onClick={() => setDialogOpen(true)}>
+            <Plus className="h-4 w-4" />
+            New Program
+          </Button>
         }
       />
 
@@ -204,8 +210,10 @@ export default function TrainingPage() {
         </Card>
         <Card>
           <CardContent className="p-5">
-            <p className="text-sm font-medium text-muted-foreground">Certifications Earned</p>
-            <p className="mt-2 text-3xl font-bold tracking-tight">342</p>
+            <p className="text-sm font-medium text-muted-foreground">Completed Programs</p>
+            <p className="mt-2 text-3xl font-bold tracking-tight">
+              {programs.filter((p) => p.status === "COMPLETED").length}
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -225,7 +233,7 @@ export default function TrainingPage() {
                 </CardHeader>
                 <CardContent>
                   <Skeleton className="h-4 w-32" />
-                  <Skeleton className="mt-3 h-2 w-full" />
+                  <Skeleton className="mt-3 h-8 w-full" />
                 </CardContent>
               </Card>
             ))}
@@ -261,16 +269,15 @@ export default function TrainingPage() {
                     <Avatar name={program.instructor} size="sm" />
                     <span className="text-sm text-muted-foreground">{program.instructor}</span>
                   </div>
-                  <div>
-                    <div className="mb-1.5 flex items-center justify-between text-xs">
-                      <span className="text-muted-foreground">Progress</span>
-                      <span className="font-semibold">{program.progress}%</span>
-                    </div>
-                    <ProgressBar value={program.progress} />
-                  </div>
-                  <Button variant="outline" size="sm" className="w-full">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    disabled={enrollingId === program.id}
+                    onClick={() => handleEnroll(program.id)}
+                  >
                     <BookOpen className="h-4 w-4" />
-                    Continue Learning
+                    {enrollingId === program.id ? "Enrolling..." : "Enroll"}
                   </Button>
                 </CardContent>
               </Card>
@@ -284,8 +291,27 @@ export default function TrainingPage() {
           <h2 className="text-lg font-semibold">All Programs</h2>
           <p className="text-sm text-muted-foreground">Full catalog of training and development programs</p>
         </div>
-        <DataTable columns={columns} data={programs} pagination />
+        {loading ? (
+          <div className="space-y-3 rounded-2xl border border-border bg-card p-4">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+        ) : error ? (
+          <EmptyState
+            title="Unable to load training programs"
+            description="Check that the backend API is reachable and you are signed in."
+          />
+        ) : (
+          <DataTable columns={columns} data={programs} pagination />
+        )}
       </div>
+
+      <TrainingProgramFormDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        onCreated={() => setRefreshKey((k) => k + 1)}
+      />
     </div>
   );
 }

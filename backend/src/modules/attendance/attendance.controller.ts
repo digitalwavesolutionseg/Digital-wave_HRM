@@ -13,6 +13,7 @@ import { AttendanceService } from "./attendance.service";
 import { ClockInDto } from "./dto/clock-in.dto";
 import { ClockOutDto } from "./dto/clock-out.dto";
 import { UpdateAttendanceDto } from "./dto/update-attendance.dto";
+import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 import { RolesGuard } from "../../common/guards/roles.guard";
 import { Roles, Role } from "../../common/decorators/roles.decorator";
@@ -32,14 +33,14 @@ export class AttendanceController {
 
   @Post("clock-in")
   @Roles(Role.SUPER_ADMIN, Role.HR, Role.MANAGER, Role.FINANCE, Role.RECRUITER, Role.EMPLOYEE)
-  clockIn(@Body() dto: ClockInDto) {
-    return this.attendanceService.clockIn(dto);
+  clockIn(@Body() dto: ClockInDto, @CurrentUser() user: any) {
+    return this.attendanceService.clockIn(dto, user);
   }
 
   @Post("clock-out")
   @Roles(Role.SUPER_ADMIN, Role.HR, Role.MANAGER, Role.FINANCE, Role.RECRUITER, Role.EMPLOYEE)
-  clockOut(@Body() dto: ClockOutDto) {
-    return this.attendanceService.clockOut(dto);
+  clockOut(@Body() dto: ClockOutDto, @CurrentUser() user: any) {
+    return this.attendanceService.clockOut(dto, user);
   }
 
   @Patch(":id")

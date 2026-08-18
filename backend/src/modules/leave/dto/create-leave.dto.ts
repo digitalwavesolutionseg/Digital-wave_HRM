@@ -3,14 +3,16 @@ import {
   IsDateString,
   IsInt,
   IsNotEmpty,
+  IsOptional,
   IsString,
   Min,
 } from "class-validator";
 
 export class CreateLeaveDto {
+  @IsOptional()
   @IsString()
   @IsNotEmpty()
-  employeeId: string;
+  employeeId?: string;
 
   @IsString()
   @IsNotEmpty()

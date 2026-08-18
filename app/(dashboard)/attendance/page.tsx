@@ -32,13 +32,18 @@ import {
 } from "@/components/ui/card";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { AttendanceTable } from "./attendance-table";
+import { ClockDialog } from "./clock-dialog";
+import { useAuth } from "@/components/auth-provider";
 
 type DayStatus = "present" | "late" | "absent" | "leave";
 
 interface AttendanceApiItem {
   id: string;
   date: string;
+  checkIn: string | null;
+  checkOut: string | null;
   status: "PRESENT" | "LATE" | "ABSENT" | "LEAVE";
+  employee: { id: string; employeeId: string; user: { id: string } | null } | null;
 }
 
 const statusMeta: Record<DayStatus, { label: string; dot: string }> = {
@@ -65,9 +70,12 @@ function buildCalendar(today: Date) {
 }
 
 export default function AttendancePage() {
+  const { user } = useAuth();
   const [records, setRecords] = React.useState<AttendanceApiItem[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState(false);
+  const [clockOpen, setClockOpen] = React.useState(false);
+  const [refreshKey, setRefreshKey] = React.useState(0);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -87,13 +95,27 @@ export default function AttendancePage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [refreshKey]);
 
   const today = new Date();
   const days = buildCalendar(today);
   const monthStart = startOfMonth(today);
   const monthEnd = endOfMonth(today);
   const rangeLabel = `${format(monthStart, "MMM d")} – ${format(monthEnd, "MMM d, yyyy")}`;
+
+  const currentRecord = React.useMemo(() => {
+    if (!user) return null;
+    const todayKey = format(today, "yyyy-MM-dd");
+    return (
+      records.find(
+        (r) =>
+          format(new Date(r.date), "yyyy-MM-dd") === todayKey &&
+          r.employee?.user?.id === user.id
+      ) ?? null
+    );
+  }, [records, user, today]);
+
+  const isClockedIn = !!currentRecord?.checkIn && !currentRecord?.checkOut;
 
   const counts: Record<DayStatus, number> = { present: 0, late: 0, absent: 0, leave: 0 };
   const statusByDate = new Map<string, DayStatus>();
@@ -119,8 +141,8 @@ export default function AttendancePage() {
             <Button variant="outline">
               <CalendarRange className="h-4 w-4" /> {rangeLabel}
             </Button>
-            <Button>
-              <Clock className="h-4 w-4" /> Clock In / Out
+            <Button variant={isClockedIn ? "outline" : "default"} onClick={() => setClockOpen(true)}>
+              <Clock className="h-4 w-4" /> {isClockedIn ? "Clock Out" : "Clock In"}
             </Button>
           </>
         }
@@ -239,8 +261,15 @@ export default function AttendancePage() {
             Attendance data could not be loaded. Showing calendar from live records is unavailable.
           </div>
         ) : null}
-        <AttendanceTable />
+        <AttendanceTable refreshKey={refreshKey} />
       </div>
+
+      <ClockDialog
+        open={clockOpen}
+        onOpenChange={setClockOpen}
+        currentRecord={currentRecord}
+        onClocked={() => setRefreshKey((k) => k + 1)}
+      />
     </div>
   );
 }

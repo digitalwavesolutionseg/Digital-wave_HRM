@@ -10,6 +10,7 @@ import {
 } from "@nestjs/common";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { AnnouncementsService } from "./announcements.service";
+import { CreateAnnouncementDto, UpdateAnnouncementDto } from "./dto/announcement.dto";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 import { RolesGuard } from "../../common/guards/roles.guard";
@@ -34,13 +35,13 @@ export class AnnouncementsController {
 
   @Post()
   @Roles(Role.SUPER_ADMIN, Role.HR, Role.MANAGER)
-  create(@Body() dto: any, @CurrentUser() user: any) {
+  create(@Body() dto: CreateAnnouncementDto, @CurrentUser() user: any) {
     return this.announcementsService.create(dto, user.id);
   }
 
   @Patch(":id")
   @Roles(Role.SUPER_ADMIN, Role.HR, Role.MANAGER)
-  update(@Param("id") id: string, @Body() dto: any) {
+  update(@Param("id") id: string, @Body() dto: UpdateAnnouncementDto) {
     return this.announcementsService.update(id, dto);
   }
 

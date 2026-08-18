@@ -1,15 +1,72 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Download, Filter, Plus, Search } from "lucide-react";
+import { toast } from "sonner";
 import { PageHeader } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
-import { EmployeesTable } from "./employees-table";
+import { EmployeesTable, EmployeeRow, EmployeeApiItem } from "./employees-table";
+import { EmployeeFormDialog } from "./employee-form-dialog";
+
+interface DepartmentOption {
+  id: string;
+  name: string;
+}
 
 export default function EmployeesPage() {
   const [search, setSearch] = useState("");
+  const [departmentFilter, setDepartmentFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [departments, setDepartments] = useState<DepartmentOption[]>([]);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editing, setEditing] = useState<EmployeeApiItem | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { api } = await import("@/lib/api");
+        const res = await api.get<DepartmentOption[]>("/departments");
+        if (!cancelled) setDepartments(res);
+      } catch {
+        /* non-critical */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const handleExport = useCallback(async () => {
+    try {
+      const { api } = await import("@/lib/api");
+      const res = await api.get<{ data: EmployeeRow[] }>("/employees?limit=500");
+      const rows = res.data;
+      if (!rows.length) {
+        toast.info("No employees to export");
+        return;
+      }
+      const header = ["Name", "Email", "Department", "Position", "Status", "Salary", "Joined"];
+      const lines = rows.map((e) =>
+        [e.name, e.email, e.department, e.position, e.status, String(e.salary), e.hireDate]
+          .map((v) => `"${String(v ?? "").replace(/"/g, '""')}"`)
+          .join(",")
+      );
+      const csv = [header.join(","), ...lines].join("\n");
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `employees-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Export failed");
+    }
+  }, []);
 
   const toolbar = (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -22,27 +79,29 @@ export default function EmployeesPage() {
           onChange={(e) => setSearch(e.target.value)}
         />
       </div>
-      <Select defaultValue="all" className="w-full sm:w-44">
+      <Select value={departmentFilter} onChange={(e) => setDepartmentFilter(e.target.value)} className="w-full sm:w-44">
         <option value="all">All Departments</option>
-        <option value="eng">Engineering</option>
-        <option value="design">Design</option>
-        <option value="sales">Sales</option>
-        <option value="hr">HR</option>
+        {departments.map((d) => (
+          <option key={d.id} value={d.name}>
+            {d.name}
+          </option>
+        ))}
       </Select>
-      <Select defaultValue="all" className="w-full sm:w-36">
+      <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="w-full sm:w-36">
         <option value="all">All Status</option>
-        <option value="active">Active</option>
-        <option value="leave">On Leave</option>
-        <option value="probation">Probation</option>
+        <option value="Active">Active</option>
+        <option value="On Leave">On Leave</option>
+        <option value="Probation">Probation</option>
+        <option value="Inactive">Inactive</option>
       </Select>
       <div className="flex items-center gap-2 sm:ml-auto">
-        <Button variant="outline" size="sm">
+        <Button variant="outline" size="sm" onClick={handleExport}>
           <Download className="h-4 w-4" /> Export
         </Button>
         <Button variant="outline" size="sm">
           <Filter className="h-4 w-4" />
         </Button>
-        <Button size="sm">
+        <Button size="sm" onClick={() => { setEditing(null); setDialogOpen(true); }}>
           <Plus className="h-4 w-4" /> Add Employee
         </Button>
       </div>
@@ -55,7 +114,21 @@ export default function EmployeesPage() {
         title="Employees"
         description="Manage your workforce, profiles, and employment records."
       />
-      <EmployeesTable toolbar={toolbar} search={search} />
+      <EmployeesTable
+        toolbar={toolbar}
+        search={search}
+        departmentFilter={departmentFilter}
+        statusFilter={statusFilter}
+        onEdit={setEditing}
+        refreshKey={refreshKey}
+        onChanged={() => setRefreshKey((k) => k + 1)}
+      />
+      <EmployeeFormDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        editing={editing}
+        onSaved={() => setRefreshKey((k) => k + 1)}
+      />
     </div>
   );
 }

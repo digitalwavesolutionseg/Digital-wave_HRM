@@ -68,7 +68,8 @@ export const ModelName = {
   TrainingEnrollment: 'TrainingEnrollment',
   Asset: 'Asset',
   Announcement: 'Announcement',
-  CompanySetting: 'CompanySetting'
+  CompanySetting: 'CompanySetting',
+  AuditLog: 'AuditLog'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -97,6 +98,8 @@ export const UserScalarFieldEnum = {
   avatarUrl: 'avatarUrl',
   isActive: 'isActive',
   refreshToken: 'refreshToken',
+  passwordResetOtp: 'passwordResetOtp',
+  passwordResetOtpExpires: 'passwordResetOtpExpires',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -369,6 +372,21 @@ export const CompanySettingScalarFieldEnum = {
 export type CompanySettingScalarFieldEnum = (typeof CompanySettingScalarFieldEnum)[keyof typeof CompanySettingScalarFieldEnum]
 
 
+export const AuditLogScalarFieldEnum = {
+  id: 'id',
+  actorId: 'actorId',
+  action: 'action',
+  entity: 'entity',
+  entityId: 'entityId',
+  metadata: 'metadata',
+  ipAddress: 'ipAddress',
+  userAgent: 'userAgent',
+  createdAt: 'createdAt'
+} as const
+
+export type AuditLogScalarFieldEnum = (typeof AuditLogScalarFieldEnum)[keyof typeof AuditLogScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -382,6 +400,14 @@ export const JsonNullValueInput = {
 } as const
 
 export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
+
+
+export const NullableJsonNullValueInput = {
+  DbNull: DbNull,
+  JsonNull: JsonNull
+} as const
+
+export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
 
 
 export const QueryMode = {

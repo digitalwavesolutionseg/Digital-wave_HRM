@@ -6,18 +6,14 @@ import * as React from "react";
 import {
   FileText,
   FileSpreadsheet,
-  FileDown,
-  Download,
   Users,
   CalendarClock,
   Wallet,
   Plane,
-  UserSearch,
   TrendingDown,
-  BarChart3,
-  PieChart,
   Clock,
   UserX,
+  ArrowRight,
 } from "lucide-react";
 import {
   Cell,
@@ -28,85 +24,25 @@ import {
 } from "recharts";
 import { PageHeader } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { formatCurrency } from "@/lib/utils";
 
-type ReportType = "PDF" | "EXCEL" | "CSV";
-
-type Report = {
-  id: string;
-  name: string;
-  description: string;
-  icon: React.ReactNode;
-  type: ReportType;
-  updated: string;
-};
-
-const reportTypeVariant: Record<ReportType, "default" | "success" | "warning"> = {
-  PDF: "default",
-  EXCEL: "success",
-  CSV: "warning",
-};
-
-const reports: Report[] = [
+const moduleExports = [
   {
-    id: "1",
-    name: "Headcount Report",
-    description: "Active headcount by department, location and employment type with month-over-month change.",
+    name: "Employee Directory",
+    description: "CSV export of all employees with the current filters applied.",
+    href: "/employees",
     icon: <Users className="h-5 w-5" />,
-    type: "PDF",
-    updated: "Aug 1, 2026",
   },
   {
-    id: "2",
-    name: "Attendance Report",
-    description: "Daily attendance, late arrivals and early departures across all teams for any date range.",
-    icon: <CalendarClock className="h-5 w-5" />,
-    type: "EXCEL",
-    updated: "Aug 3, 2026",
-  },
-  {
-    id: "3",
-    name: "Payroll Report",
-    description: "Gross pay, deductions, net pay and employer costs summarized by employee and department.",
+    name: "Payroll Records",
+    description: "CSV export of payroll records filtered by period and status.",
+    href: "/payroll",
     icon: <Wallet className="h-5 w-5" />,
-    type: "CSV",
-    updated: "Jul 31, 2026",
-  },
-  {
-    id: "4",
-    name: "Leave Report",
-    description: "Leave balances, approvals and utilization trends broken down by leave type and employee.",
-    icon: <Plane className="h-5 w-5" />,
-    type: "PDF",
-    updated: "Aug 2, 2026",
-  },
-  {
-    id: "5",
-    name: "Recruitment Report",
-    description: "Hiring funnel metrics including applications, interviews, offers and time-to-hire.",
-    icon: <UserSearch className="h-5 w-5" />,
-    type: "EXCEL",
-    updated: "Jul 28, 2026",
-  },
-  {
-    id: "6",
-    name: "Turnover Report",
-    description: "Voluntary and involuntary turnover rates with retention analysis by tenure and team.",
-    icon: <TrendingDown className="h-5 w-5" />,
-    type: "PDF",
-    updated: "Jul 29, 2026",
   },
 ];
-
-const typeIcon: Record<ReportType, React.ReactNode> = {
-  PDF: <FileText className="h-4 w-4" />,
-  EXCEL: <FileSpreadsheet className="h-4 w-4" />,
-  CSV: <FileDown className="h-4 w-4" />,
-};
 
 interface HeadcountResponse {
   total: number;
@@ -191,11 +127,6 @@ export default function ReportsPage() {
       <PageHeader
         title="Reports & Analytics"
         description="Generate insights from your workforce data."
-        actions={
-          <Button variant="outline">
-            <Download className="h-4 w-4" /> Export
-          </Button>
-        }
       />
 
       {loading ? (
@@ -299,30 +230,25 @@ export default function ReportsPage() {
 
       <div>
         <div className="mb-4 flex items-center gap-2">
-          <BarChart3 className="h-5 w-5 text-primary" />
-          <h2 className="text-base font-semibold">Available Reports</h2>
+          <FileSpreadsheet className="h-5 w-5 text-primary" />
+          <h2 className="text-base font-semibold">Module Exports</h2>
         </div>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {reports.map((r) => (
-            <Card key={r.id} className="group flex flex-col transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_12px_32px_rgba(0,0,0,0.09)]">
+          {moduleExports.map((r) => (
+            <Card key={r.href} className="group flex flex-col transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_12px_32px_rgba(0,0,0,0.09)]">
               <CardContent className="flex flex-1 flex-col p-6">
-                <div className="flex items-start justify-between">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-primary/8 text-primary">
-                    {r.icon}
-                  </div>
-                  <Badge variant={reportTypeVariant[r.type]}>
-                    {typeIcon[r.type]}
-                    {r.type}
-                  </Badge>
+                <div className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-primary/8 text-primary">
+                  {r.icon}
                 </div>
                 <h3 className="mt-4 text-base font-semibold">{r.name}</h3>
                 <p className="mt-1.5 flex-1 text-sm leading-relaxed text-muted-foreground">
                   {r.description}
                 </p>
-                <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
-                  <span className="text-xs text-muted-foreground">Updated {r.updated}</span>
-                  <Button variant="outline" size="sm">
-                    <Download className="h-3.5 w-3.5" /> Download
+                <div className="mt-4 border-t border-border pt-4">
+                  <Button variant="outline" size="sm" asChild>
+                    <a href={r.href}>
+                      Open {r.name.replace(" Directory", "").replace(" Records", "")} <ArrowRight className="h-3.5 w-3.5" />
+                    </a>
                   </Button>
                 </div>
               </CardContent>
@@ -330,22 +256,6 @@ export default function ReportsPage() {
           ))}
         </div>
       </div>
-
-      <Card className="border-dashed">
-        <CardContent className="flex items-center gap-4 p-6">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] bg-warning/10 text-warning">
-            <PieChart className="h-6 w-6" />
-          </div>
-          <div className="flex-1">
-            <h3 className="text-base font-semibold">Custom Reports</h3>
-            <p className="text-sm text-muted-foreground">
-              Build your own report by combining metrics, dimensions and filters, then schedule it for
-              automatic delivery.
-            </p>
-          </div>
-          <Button className="shrink-0">Create Custom Report</Button>
-        </CardContent>
-      </Card>
     </div>
   );
 }

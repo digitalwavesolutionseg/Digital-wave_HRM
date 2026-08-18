@@ -1,12 +1,20 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from "@nestjs/common";
 import { LeaveStatus } from "../../generated/prisma/client";
 import { PrismaService } from "../../prisma/prisma.service";
+import { Role } from "../../common/decorators/roles.decorator";
+import { AuditService } from "../audit/audit.service";
 import { CreateLeaveDto } from "./dto/create-leave.dto";
-import { ReviewLeaveDto } from "./dto/review-leave.dto";
 
 @Injectable()
 export class LeaveService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private auditService: AuditService
+  ) {}
 
   private employeeSelect: any = {
     select: {
@@ -37,10 +45,14 @@ export class LeaveService {
     });
   }
 
-  create(dto: CreateLeaveDto) {
-    return this.prisma.leave.create({
+  async create(dto: CreateLeaveDto, user?: any) {
+    const employeeId = await this.resolveEmployeeId(dto.employeeId, user);
+    if (!employeeId) {
+      throw new ForbiddenException("No employee profile linked to your account");
+    }
+    const record = await this.prisma.leave.create({
       data: {
-        employeeId: dto.employeeId,
+        employeeId,
         leaveTypeId: dto.leaveTypeId,
         startDate: new Date(dto.startDate),
         endDate: new Date(dto.endDate),
@@ -49,40 +61,80 @@ export class LeaveService {
       },
       include: { employee: true, leaveType: true },
     });
+
+    await this.auditService.record({
+      actorId: user?.id,
+      action: "leave.create",
+      entity: "leave",
+      entityId: record.id,
+      metadata: { employeeId, leaveTypeId: dto.leaveTypeId, days: dto.days },
+    });
+
+    return record;
   }
 
-  async approve(id: string, dto?: ReviewLeaveDto) {
+  async approve(id: string, user?: any) {
     await this.ensureExists(id);
-    return this.prisma.leave.update({
+    if (!user) {
+      throw new ForbiddenException("Reviewer identity required");
+    }
+    const record = await this.prisma.leave.update({
       where: { id },
       data: {
         status: LeaveStatus.APPROVED,
-        reviewedById: dto?.reviewedById,
+        reviewedById: user.id,
         reviewedAt: new Date(),
       },
       include: { employee: true, leaveType: true },
     });
+
+    await this.auditService.record({
+      actorId: user.id,
+      action: "leave.approve",
+      entity: "leave",
+      entityId: id,
+      metadata: { reviewerId: user.id },
+    });
+
+    return record;
   }
 
-  async reject(id: string, dto?: ReviewLeaveDto) {
+  async reject(id: string, user?: any) {
     await this.ensureExists(id);
-    return this.prisma.leave.update({
+    if (!user) {
+      throw new ForbiddenException("Reviewer identity required");
+    }
+    const record = await this.prisma.leave.update({
       where: { id },
       data: {
         status: LeaveStatus.REJECTED,
-        reviewedById: dto?.reviewedById,
+        reviewedById: user.id,
         reviewedAt: new Date(),
       },
       include: { employee: true, leaveType: true },
     });
+
+    await this.auditService.record({
+      actorId: user.id,
+      action: "leave.reject",
+      entity: "leave",
+      entityId: id,
+      metadata: { reviewerId: user.id },
+    });
+
+    return record;
   }
 
-  async getBalance(employeeId: string) {
+  async getBalance(employeeId: string, user?: any) {
+    const resolvedEmployeeId = await this.resolveEmployeeId(employeeId, user);
+    if (!resolvedEmployeeId) {
+      throw new ForbiddenException("No employee profile linked to your account");
+    }
     const leaveTypes = await this.prisma.leaveType.findMany({
       orderBy: { name: "asc" },
     });
     const leaves = await this.prisma.leave.findMany({
-      where: { employeeId, status: LeaveStatus.APPROVED },
+      where: { employeeId: resolvedEmployeeId, status: LeaveStatus.APPROVED },
     });
     return leaveTypes.map((leaveType) => {
       const taken = leaves
@@ -96,6 +148,28 @@ export class LeaveService {
         remaining: leaveType.defaultDays - taken,
       };
     });
+  }
+
+  private async resolveEmployeeId(
+    requested: string | undefined,
+    user?: any
+  ): Promise<string | undefined> {
+    if (user && user.role === Role.EMPLOYEE) {
+      const employee = await this.prisma.employee.findFirst({
+        where: { userId: user.id },
+        select: { id: true },
+      });
+      return employee?.id;
+    }
+    if (requested) return requested;
+    if (user) {
+      const employee = await this.prisma.employee.findFirst({
+        where: { userId: user.id },
+        select: { id: true },
+      });
+      return employee?.id;
+    }
+    return undefined;
   }
 
   private async ensureExists(id: string) {

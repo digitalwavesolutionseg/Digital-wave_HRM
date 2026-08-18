@@ -12,6 +12,7 @@ import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { PayrollService } from "./payroll.service";
 import { GeneratePayrollDto } from "./dto/generate-payroll.dto";
 import { QueryPayrollDto } from "./dto/query-payroll.dto";
+import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 import { RolesGuard } from "../../common/guards/roles.guard";
 import { Roles, Role } from "../../common/decorators/roles.decorator";
@@ -43,7 +44,7 @@ export class PayrollController {
 
   @Patch(":id/mark-paid")
   @Roles(Role.SUPER_ADMIN, Role.HR, Role.FINANCE)
-  markPaid(@Param("id") id: string) {
-    return this.payrollService.markPaid(id);
+  markPaid(@Param("id") id: string, @CurrentUser() user: any) {
+    return this.payrollService.markPaid(id, user);
   }
 }

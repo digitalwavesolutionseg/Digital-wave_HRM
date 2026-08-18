@@ -1,5 +1,12 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable, NotFoundException, ForbiddenException } from "@nestjs/common";
 import { PrismaService } from "../../prisma/prisma.service";
+import { Role } from "../../common/decorators/roles.decorator";
+import {
+  CreateTrainingProgramDto,
+  UpdateTrainingProgramDto,
+  EnrollTrainingDto,
+  UpdateEnrollmentDto,
+} from "./dto/training-program.dto";
 
 @Injectable()
 export class TrainingService {
@@ -33,7 +40,7 @@ export class TrainingService {
     });
   }
 
-  create(dto: any) {
+  create(dto: CreateTrainingProgramDto) {
     return this.prisma.trainingProgram.create({
       data: {
         title: dto.title,
@@ -45,7 +52,7 @@ export class TrainingService {
     });
   }
 
-  async update(id: string, dto: any) {
+  async update(id: string, dto: UpdateTrainingProgramDto) {
     await this.ensureExists(id);
     return this.prisma.trainingProgram.update({
       where: { id },
@@ -65,16 +72,27 @@ export class TrainingService {
     return { success: true };
   }
 
-  async enroll(programId: string, dto: any) {
+  async enroll(programId: string, dto: EnrollTrainingDto, user?: any) {
+    let employeeId = dto.employeeId;
+    if (user?.role === Role.EMPLOYEE || !employeeId) {
+      const employee = await this.prisma.employee.findFirst({
+        where: { userId: user?.id },
+        select: { id: true },
+      });
+      if (!employee) {
+        throw new ForbiddenException("No employee profile linked to your account");
+      }
+      employeeId = employee.id;
+    }
     return this.prisma.trainingEnrollment.create({
       data: {
         programId,
-        employeeId: dto.employeeId,
+        employeeId,
       },
     });
   }
 
-  async updateEnrollment(enrollmentId: string, dto: any) {
+  async updateEnrollment(enrollmentId: string, dto: UpdateEnrollmentDto) {
     const enrollment = await this.prisma.trainingEnrollment.findUnique({
       where: { id: enrollmentId },
     });

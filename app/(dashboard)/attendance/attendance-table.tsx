@@ -118,7 +118,11 @@ const columns: ColumnDef<AttendanceRow>[] = [
   },
 ];
 
-export function AttendanceTable() {
+interface AttendanceTableProps {
+  refreshKey?: number;
+}
+
+export function AttendanceTable({ refreshKey }: AttendanceTableProps) {
   const [rows, setRows] = React.useState<AttendanceRow[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState(false);
@@ -141,7 +145,7 @@ export function AttendanceTable() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [refreshKey]);
 
   if (loading) {
     return (

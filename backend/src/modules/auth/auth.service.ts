@@ -1,8 +1,9 @@
-import { Injectable, UnauthorizedException, ConflictException } from "@nestjs/common";
+import { Injectable, UnauthorizedException, ConflictException, BadRequestException } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import * as bcrypt from "bcryptjs";
+import { Resend } from "resend";
 import { PrismaService } from "../../prisma/prisma.service";
-import { LoginDto, RefreshTokenDto, RegisterDto } from "./dto/auth.dto";
+import { ForgotPasswordDto, LoginDto, RefreshTokenDto, RegisterDto, ResetPasswordDto } from "./dto/auth.dto";
 
 interface JwtPayload {
   sub: string;
@@ -12,10 +13,14 @@ interface JwtPayload {
 
 @Injectable()
 export class AuthService {
+  private resend: Resend | null;
+
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService
-  ) {}
+  ) {
+    this.resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+  }
 
   async validateUser(email: string, password: string) {
     const user = await this.prisma.user.findUnique({ where: { email } });
@@ -108,6 +113,81 @@ export class AuthService {
       data: { refreshToken: null },
     });
     return { success: true };
+  }
+
+  async forgotPassword(dto: ForgotPasswordDto) {
+    const user = await this.prisma.user.findUnique({ where: { email: dto.email } });
+    if (!user || !user.isActive) {
+      return { success: true };
+    }
+
+    const otp = this.generateOtp();
+    const hashedOtp = await bcrypt.hash(otp, 10);
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { passwordResetOtp: hashedOtp, passwordResetOtpExpires: expiresAt },
+    });
+
+    await this.sendOtpEmail(user.email, user.firstName, otp);
+
+    return { success: true };
+  }
+
+  async resetPassword(dto: ResetPasswordDto) {
+    const user = await this.prisma.user.findUnique({ where: { email: dto.email } });
+    if (!user || !user.passwordResetOtp || !user.passwordResetOtpExpires) {
+      throw new BadRequestException("No password reset request found for this email");
+    }
+
+    if (user.passwordResetOtpExpires < new Date()) {
+      throw new BadRequestException("OTP has expired. Please request a new one.");
+    }
+
+    const valid = await bcrypt.compare(dto.otp, user.passwordResetOtp);
+    if (!valid) {
+      throw new BadRequestException("Invalid OTP");
+    }
+
+    const passwordHash = await bcrypt.hash(dto.password, 12);
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        password: passwordHash,
+        passwordResetOtp: null,
+        passwordResetOtpExpires: null,
+        refreshToken: null,
+      },
+    });
+
+    return { success: true };
+  }
+
+  private generateOtp(): string {
+    return String(Math.floor(100000 + Math.random() * 900000));
+  }
+
+  private async sendOtpEmail(email: string, firstName: string, otp: string) {
+    if (!this.resend) return;
+    const from = process.env.RESEND_FROM_EMAIL ?? "Digital Wave HRM <onboarding@resend.dev>";
+    await this.resend.emails.send({
+      from,
+      to: email,
+      subject: "Your Digital Wave HRM password reset code",
+      html: `
+        <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:24px;border:1px solid #e2e8f0;border-radius:16px;background:#ffffff;color:#0f172a">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+            <div style="width:36px;height:36px;border-radius:10px;background:#0b5fff;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700">DW</div>
+            <span style="font-weight:700;font-size:18px">Digital Wave HRM</span>
+          </div>
+          <h2 style="margin:0 0 8px;font-size:20px">Hi ${firstName},</h2>
+          <p style="margin:0 0 16px;color:#475569;line-height:1.6">We received a request to reset your password. Use the code below to complete the reset. It expires in 10 minutes.</p>
+          <div style="font-size:32px;font-weight:700;letter-spacing:8px;text-align:center;padding:16px;background:#f1f5f9;border-radius:12px;color:#0b5fff">${otp}</div>
+          <p style="margin:20px 0 0;color:#94a3b8;font-size:13px">If you didn't request this, you can safely ignore this email.</p>
+        </div>
+      `,
+    });
   }
 
   private async generateTokens(userId: string, email: string, role: string) {

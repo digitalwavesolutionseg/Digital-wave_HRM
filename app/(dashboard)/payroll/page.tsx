@@ -19,6 +19,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { toast } from "sonner";
 import { PageHeader } from "@/components/ui/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -67,6 +68,8 @@ interface PayrollApiItem {
   employee: { employeeId: string; department: { name: string } | null; user: { firstName: string; lastName: string } | null } | null;
 }
 
+const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
 function mapPayroll(item: PayrollApiItem): PayrollRun {
   const name = item.employee?.user
     ? `${item.employee.user.firstName} ${item.employee.user.lastName}`
@@ -82,17 +85,6 @@ function mapPayroll(item: PayrollApiItem): PayrollRun {
     status: item.status,
   };
 }
-
-const payrollTrend = [
-  { month: "Jan", gross: 388400, net: 298600 },
-  { month: "Feb", gross: 392700, net: 301800 },
-  { month: "Mar", gross: 401200, net: 308900 },
-  { month: "Apr", gross: 396800, net: 305400 },
-  { month: "May", gross: 408600, net: 314200 },
-  { month: "Jun", gross: 415300, net: 319500 },
-  { month: "Jul", gross: 421900, net: 324800 },
-  { month: "Aug", gross: 428450, net: 329080 },
-];
 
 function PayrollStatusBadge({ status }: { status: PayrollStatus }) {
   const map: Record<PayrollStatus, { label: string; variant: "success" | "warning" | "info" }> = {
@@ -114,12 +106,58 @@ function PayrollBreakdownRow({ label, value, muted }: { label: string; value: st
 }
 
 export default function PayrollPage() {
-  const [period, setPeriod] = React.useState("August 2026");
+  const [period, setPeriod] = React.useState("");
   const [runOpen, setRunOpen] = React.useState(false);
   const [selected, setSelected] = React.useState<PayrollRun | null>(null);
   const [runs, setRuns] = React.useState<PayrollRun[]>([]);
+  const [chartData, setChartData] = React.useState<{ month: string; gross: number; net: number }[]>([]);
+  const [periodOptions, setPeriodOptions] = React.useState<string[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState(false);
+  const [runMonth, setRunMonth] = React.useState(() => new Date().getMonth() + 1);
+  const [runYear, setRunYear] = React.useState(() => new Date().getFullYear());
+  const [running, setRunning] = React.useState(false);
+  const [markingId, setMarkingId] = React.useState<string | null>(null);
+
+  const fetchAll = React.useCallback(async () => {
+    try {
+      const { api } = await import("@/lib/api");
+      const res = await api.get<PayrollApiItem[]>("/payroll");
+      const sorted = [...res].sort((a, b) => b.periodYear - a.periodYear || b.periodMonth - a.periodMonth);
+
+      const byPeriod = new Map<string, PayrollApiItem[]>();
+      for (const item of sorted) {
+        const key = `${item.periodYear}-${String(item.periodMonth).padStart(2, "0")}`;
+        const arr = byPeriod.get(key) ?? [];
+        arr.push(item);
+        byPeriod.set(key, arr);
+      }
+      const options = [...byPeriod.keys()]
+        .map((key) => {
+          const [y, m] = key.split("-").map(Number);
+          return `${MONTHS[m - 1]} ${y}`;
+        });
+      setPeriodOptions(options);
+      if (options.length > 0 && !options.includes(period)) {
+        setPeriod(options[0]);
+      }
+
+      const byMonth = new Map<string, { gross: number; net: number }>();
+      for (const item of sorted) {
+        const key = `${MONTHS[item.periodMonth - 1]}`;
+        const cur = byMonth.get(key) ?? { gross: 0, net: 0 };
+        cur.gross += Number(item.grossSalary);
+        cur.net += Number(item.netPay);
+        byMonth.set(key, cur);
+      }
+      setChartData(
+        [...byMonth.entries()].map(([month, totals]) => ({ month, ...totals })).slice(-8)
+      );
+      setError(false);
+    } catch {
+      setError(true);
+    }
+  }, [period]);
 
   const fetchRuns = React.useCallback(async (month: number, year: number) => {
     try {
@@ -129,33 +167,76 @@ export default function PayrollPage() {
       setError(false);
     } catch {
       setError(true);
-    } finally {
-      setLoading(false);
     }
   }, []);
 
   React.useEffect(() => {
-    const now = new Date();
-    const month = now.getMonth() + 1;
-    const year = now.getFullYear();
-    const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-    setPeriod(`${months[month - 1]} ${year}`);
-    fetchRuns(month, year);
-  }, [fetchRuns]);
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      await fetchAll();
+      if (cancelled) return;
+      if (period) {
+        const parts = period.split(" ");
+        await fetchRuns(MONTHS.indexOf(parts[0]) + 1, Number(parts[1]));
+      }
+      if (!cancelled) setLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [period, fetchAll, fetchRuns]);
 
-  const handlePeriodChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = e.target.value;
-    setPeriod(value);
-    const parts = value.split(" ");
-    const month = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"].indexOf(parts[0]) + 1;
-    const year = Number(parts[1]);
-    setLoading(true);
-    fetchRuns(month, year);
+  const handleRunPayroll = async () => {
+    setRunning(true);
+    try {
+      const { api } = await import("@/lib/api");
+      const res = await api.post<{ count: number }>("/payroll/generate", {
+        month: runMonth,
+        year: runYear,
+      });
+      toast.success(`Payroll generated for ${res.count} active employees`);
+      setRunOpen(false);
+      await fetchAll();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to run payroll");
+    } finally {
+      setRunning(false);
+    }
+  };
+
+  const handleMarkPaid = async (id: string) => {
+    setMarkingId(id);
+    try {
+      const { api } = await import("@/lib/api");
+      await api.patch(`/payroll/${id}/mark-paid`);
+      toast.success("Payroll marked as paid");
+      await fetchAll();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to mark as paid");
+    } finally {
+      setMarkingId(null);
+    }
+  };
+
+  const handleExport = () => {
+    const header = ["Employee", "Role", "Gross", "Allowances", "Deductions", "Net", "Status"];
+    const lines = runs.map((r) =>
+      [r.employee, r.role, r.gross, r.allowances, r.deductions, r.net, r.status].join(",")
+    );
+    const blob = new Blob([[header.join(","), ...lines].join("\n")], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `payroll-${period.replace(" ", "-")}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const grossTotal = runs.reduce((acc, r) => acc + r.gross, 0);
   const netTotal = runs.reduce((acc, r) => acc + r.net, 0);
   const deductionsTotal = runs.reduce((acc, r) => acc + r.deductions, 0);
+  const ytdNet = chartData.reduce((acc, c) => acc + c.net, 0);
 
   const columns = React.useMemo<ColumnDef<PayrollRun>[]>(
     () => [
@@ -203,31 +284,47 @@ export default function PayrollPage() {
         id: "actions",
         header: "",
         cell: ({ row }) => (
-          <Button variant="ghost" size="sm" onClick={() => setSelected(row.original)}>
-            <FileText className="h-4 w-4" />
-            Payslip
-          </Button>
+          <div className="flex items-center justify-end gap-1">
+            {row.original.status !== "PAID" && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-success"
+                disabled={markingId === row.original.id}
+                onClick={() => handleMarkPaid(row.original.id)}
+              >
+                {markingId === row.original.id ? "Marking..." : "Mark Paid"}
+              </Button>
+            )}
+            <Button variant="ghost" size="sm" onClick={() => setSelected(row.original)}>
+              <FileText className="h-4 w-4" />
+              Payslip
+            </Button>
+          </div>
         ),
       },
     ],
-    []
+    [markingId]
   );
 
   return (
     <div className="mx-auto max-w-[1400px] space-y-6 animate-fade-up">
       <PageHeader
         title="Payroll"
-        description={`Manage payroll runs, payslips and compensation for ${period}.`}
+        description={`Manage payroll runs, payslips and compensation${period ? ` for ${period}.` : "."}`}
         actions={
           <>
-            <div className="w-40">
-              <Select value={period} onChange={handlePeriodChange}>
-                <option>{period}</option>
-                <option>July 2026</option>
-                <option>June 2026</option>
-                <option>May 2026</option>
-              </Select>
-            </div>
+            {periodOptions.length > 0 && (
+              <div className="w-44">
+                <Select value={period} onChange={(e) => setPeriod(e.target.value)}>
+                  {periodOptions.map((p) => (
+                    <option key={p} value={p}>
+                      {p}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+            )}
             <Button onClick={() => setRunOpen(true)}>
               <Wallet className="h-4 w-4" />
               Run Payroll
@@ -271,58 +368,65 @@ export default function PayrollPage() {
         <CardHeader className="flex flex-row items-start justify-between">
           <div>
             <CardTitle>Payroll Cost</CardTitle>
-            <CardDescription>Gross vs net payroll over the last 8 months</CardDescription>
+            <CardDescription>Gross vs net payroll across recorded periods</CardDescription>
           </div>
-          <Badge variant="outline">YTD $3.2M</Badge>
+          <Badge variant="outline">Net YTD {formatCurrency(ytdNet)}</Badge>
         </CardHeader>
         <CardContent className="h-[280px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={payrollTrend} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
-              <defs>
-                <linearGradient id="grossFill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#0B5FFF" stopOpacity={0.25} />
-                  <stop offset="100%" stopColor="#0B5FFF" stopOpacity={0} />
-                </linearGradient>
-                <linearGradient id="netFill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#22C55E" stopOpacity={0.2} />
-                  <stop offset="100%" stopColor="#22C55E" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
-              <XAxis dataKey="month" tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
-              <YAxis
-                tick={{ fontSize: 12 }}
-                tickLine={false}
-                axisLine={false}
-                tickFormatter={(v: number) => `$${(v / 1000).toFixed(0)}k`}
-              />
-              <Tooltip
-                formatter={(value) => formatCurrency(Number(value))}
-                contentStyle={{
-                  borderRadius: 12,
-                  border: "1px solid #E5E7EB",
-                  boxShadow: "0 6px 24px rgba(0,0,0,0.08)",
-                  fontSize: 12,
-                }}
-              />
-              <Area
-                type="monotone"
-                dataKey="gross"
-                name="Gross"
-                stroke="#0B5FFF"
-                strokeWidth={2.5}
-                fill="url(#grossFill)"
-              />
-              <Area
-                type="monotone"
-                dataKey="net"
-                name="Net"
-                stroke="#22C55E"
-                strokeWidth={2.5}
-                fill="url(#netFill)"
-              />
-            </AreaChart>
-          </ResponsiveContainer>
+          {chartData.length > 0 ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="grossFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#0B5FFF" stopOpacity={0.25} />
+                    <stop offset="100%" stopColor="#0B5FFF" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="netFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#22C55E" stopOpacity={0.2} />
+                    <stop offset="100%" stopColor="#22C55E" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
+                <XAxis dataKey="month" tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
+                <YAxis
+                  tick={{ fontSize: 12 }}
+                  tickLine={false}
+                  axisLine={false}
+                  tickFormatter={(v: number) => `$${(v / 1000).toFixed(0)}k`}
+                />
+                <Tooltip
+                  formatter={(value) => formatCurrency(Number(value))}
+                  contentStyle={{
+                    borderRadius: 12,
+                    border: "1px solid #E5E7EB",
+                    boxShadow: "0 6px 24px rgba(0,0,0,0.08)",
+                    fontSize: 12,
+                  }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="gross"
+                  name="Gross"
+                  stroke="#0B5FFF"
+                  strokeWidth={2.5}
+                  fill="url(#grossFill)"
+                />
+                <Area
+                  type="monotone"
+                  dataKey="net"
+                  name="Net"
+                  stroke="#22C55E"
+                  strokeWidth={2.5}
+                  fill="url(#netFill)"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          ) : (
+            <EmptyState
+              title="No payroll data yet"
+              description="Run payroll for a period to start tracking costs."
+            />
+          )}
         </CardContent>
       </Card>
 
@@ -330,11 +434,13 @@ export default function PayrollPage() {
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-lg font-semibold">Payroll Runs</h2>
-            <p className="text-sm text-muted-foreground">{period} · {runs.length} employee runs</p>
+            <p className="text-sm text-muted-foreground">
+              {period ? `${period} · ${runs.length} employee runs` : "Loading..."}
+            </p>
           </div>
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={handleExport} disabled={runs.length === 0}>
             <Download className="h-4 w-4" />
-            Export
+            Export CSV
           </Button>
         </div>
         {loading ? (
@@ -357,30 +463,38 @@ export default function PayrollPage() {
       <Dialog open={runOpen} onOpenChange={setRunOpen}>
         <DialogHeader>
           <DialogTitle>Run Payroll</DialogTitle>
-          <DialogDescription>Review the run details before processing {period} payroll.</DialogDescription>
+          <DialogDescription>Generate payroll drafts for all active employees in a period.</DialogDescription>
         </DialogHeader>
         <DialogContent>
           <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Payroll period</Label>
-              <Select value={period} onChange={(e) => setPeriod(e.target.value)}>
-                <option>August 2026</option>
-                <option>July 2026</option>
-                <option>June 2026</option>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Payment date</Label>
-              <div className="rounded-[14px] border border-input bg-muted/40 px-3 py-2.5 text-sm text-muted-foreground">
-                Friday, August 28, 2026
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="run-month">Month</Label>
+                <Select id="run-month" value={runMonth} onChange={(e) => setRunMonth(Number(e.target.value))}>
+                  {MONTHS.map((m, i) => (
+                    <option key={m} value={i + 1}>
+                      {m}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="run-year">Year</Label>
+                <Select id="run-year" value={runYear} onChange={(e) => setRunYear(Number(e.target.value))}>
+                  {[new Date().getFullYear(), new Date().getFullYear() - 1].map((y) => (
+                    <option key={y} value={y}>
+                      {y}
+                    </option>
+                  ))}
+                </Select>
               </div>
             </div>
-            <div className="rounded-[14px] border border-border bg-accent/40 p-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">248 employees</span>
-                <span className="text-sm font-semibold tabular-nums">$329,080.00</span>
-              </div>
-              <p className="mt-1 text-xs text-muted-foreground">Net amount to be disbursed across active runs.</p>
+            <div className="rounded-[14px] border border-border bg-accent/40 p-4 text-sm">
+              <p className="text-muted-foreground">
+                Running payroll creates or refreshes DRAFT records for every active employee in{" "}
+                <span className="font-medium text-foreground">{MONTHS[runMonth - 1]} {runYear}</span>. Existing runs
+                for the period are updated; you can mark them paid afterward.
+              </p>
             </div>
           </div>
         </DialogContent>
@@ -388,9 +502,9 @@ export default function PayrollPage() {
           <Button variant="outline" onClick={() => setRunOpen(false)}>
             Cancel
           </Button>
-          <Button onClick={() => setRunOpen(false)}>
+          <Button onClick={handleRunPayroll} disabled={running}>
             <Wallet className="h-4 w-4" />
-            Run Payroll
+            {running ? "Running..." : "Run Payroll"}
           </Button>
         </DialogFooter>
       </Dialog>
@@ -429,10 +543,6 @@ export default function PayrollPage() {
             <DialogFooter>
               <Button variant="outline" onClick={() => setSelected(null)}>
                 Close
-              </Button>
-              <Button>
-                <Download className="h-4 w-4" />
-                Download PDF
               </Button>
             </DialogFooter>
           </>

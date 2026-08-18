@@ -10,6 +10,7 @@ import {
 } from "@nestjs/common";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { SettingsService } from "./settings.service";
+import { SetSettingDto, UpsertSettingsDto } from "./dto/setting.dto";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 import { RolesGuard } from "../../common/guards/roles.guard";
 import { Roles, Role } from "../../common/decorators/roles.decorator";
@@ -33,13 +34,13 @@ export class SettingsController {
 
   @Put()
   @Roles(Role.SUPER_ADMIN, Role.HR)
-  upsert(@Body() body: Record<string, any>) {
+  upsert(@Body() body: UpsertSettingsDto) {
     return this.settingsService.upsert(body);
   }
 
   @Post(":key")
   @Roles(Role.SUPER_ADMIN, Role.HR)
-  set(@Param("key") key: string, @Body() body: any) {
+  set(@Param("key") key: string, @Body() body: SetSettingDto) {
     return this.settingsService.set(key, body.value);
   }
 

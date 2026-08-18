@@ -11,8 +11,8 @@ import {
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { LeaveService } from "./leave.service";
 import { CreateLeaveDto } from "./dto/create-leave.dto";
-import { ReviewLeaveDto } from "./dto/review-leave.dto";
 import { QueryLeaveDto } from "./dto/query-leave.dto";
+import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 import { RolesGuard } from "../../common/guards/roles.guard";
 import { Roles, Role } from "../../common/decorators/roles.decorator";
@@ -32,25 +32,25 @@ export class LeaveController {
 
   @Get("balance/:employeeId")
   @Roles(Role.SUPER_ADMIN, Role.HR, Role.MANAGER, Role.FINANCE, Role.RECRUITER, Role.EMPLOYEE)
-  getBalance(@Param("employeeId") employeeId: string) {
-    return this.leaveService.getBalance(employeeId);
+  getBalance(@Param("employeeId") employeeId: string, @CurrentUser() user: any) {
+    return this.leaveService.getBalance(employeeId, user);
   }
 
   @Post()
   @Roles(Role.SUPER_ADMIN, Role.HR, Role.MANAGER, Role.EMPLOYEE)
-  create(@Body() dto: CreateLeaveDto) {
-    return this.leaveService.create(dto);
+  create(@Body() dto: CreateLeaveDto, @CurrentUser() user: any) {
+    return this.leaveService.create(dto, user);
   }
 
   @Patch(":id/approve")
   @Roles(Role.SUPER_ADMIN, Role.HR, Role.MANAGER)
-  approve(@Param("id") id: string, @Body() dto?: ReviewLeaveDto) {
-    return this.leaveService.approve(id, dto);
+  approve(@Param("id") id: string, @CurrentUser() user: any) {
+    return this.leaveService.approve(id, user);
   }
 
   @Patch(":id/reject")
   @Roles(Role.SUPER_ADMIN, Role.HR, Role.MANAGER)
-  reject(@Param("id") id: string, @Body() dto?: ReviewLeaveDto) {
-    return this.leaveService.reject(id, dto);
+  reject(@Param("id") id: string, @CurrentUser() user: any) {
+    return this.leaveService.reject(id, user);
   }
 }

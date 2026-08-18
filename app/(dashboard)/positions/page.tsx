@@ -1,17 +1,25 @@
+"use client";
+
+import * as React from "react";
 import { Briefcase, Plus } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { PositionsTable } from "./positions-table";
+import { PositionsTable, PositionApiItem } from "./positions-table";
+import { PositionFormDialog } from "./position-form-dialog";
 
 export default function PositionsPage() {
+  const [dialogOpen, setDialogOpen] = React.useState(false);
+  const [editing, setEditing] = React.useState<PositionApiItem | null>(null);
+  const [refreshKey, setRefreshKey] = React.useState(0);
+
   return (
     <div className="mx-auto max-w-[1400px] space-y-6 animate-fade-up">
       <PageHeader
         title="Positions"
-        description="Create and manage open requisitions across every department."
+        description="Create and manage positions across every department."
         actions={
-          <Button>
+          <Button onClick={() => { setEditing(null); setDialogOpen(true); }}>
             <Plus className="h-4 w-4" /> Post Position
           </Button>
         }
@@ -22,19 +30,26 @@ export default function PositionsPage() {
           <Briefcase className="h-5 w-5" />
         </div>
         <div className="mr-auto">
-          <p className="text-sm font-semibold">Recruitment Summary</p>
+          <p className="text-sm font-semibold">Position Directory</p>
           <p className="text-xs text-muted-foreground">
-            Active requisitions currently open for hiring
+            Positions are managed within departments and used by recruitment and payroll.
           </p>
         </div>
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <span className="font-semibold text-foreground">9</span>
-          <span>Open</span>
-        </div>
-        <Badge variant="secondary">12 total positions</Badge>
+        <Badge variant="secondary">Live directory</Badge>
       </div>
 
-      <PositionsTable />
+      <PositionsTable
+        refreshKey={refreshKey}
+        onEdit={setEditing}
+        onChanged={() => setRefreshKey((k) => k + 1)}
+      />
+
+      <PositionFormDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        editing={editing}
+        onSaved={() => setRefreshKey((k) => k + 1)}
+      />
     </div>
   );
 }

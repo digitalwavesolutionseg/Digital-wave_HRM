@@ -20,6 +20,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { formatDateTime } from "@/lib/utils";
+import { AnnouncementFormDialog } from "./announcement-form-dialog";
 
 type Category = "EVENT" | "POLICY" | "NOTICE" | "HR" | "PAYROLL" | "TRAINING" | "GENERAL";
 
@@ -30,6 +31,7 @@ type Announcement = {
   body: string;
   author: string;
   time: string;
+  date: string;
   pinned?: boolean;
 };
 
@@ -66,6 +68,7 @@ function mapAnnouncement(item: AnnouncementApiItem): Announcement {
       ? `${item.author.firstName} ${item.author.lastName}`
       : "—",
     time: formatDateTime(item.createdAt),
+    date: item.createdAt,
     pinned: item.pinned,
   };
 }
@@ -74,6 +77,8 @@ export default function AnnouncementsPage() {
   const [announcements, setAnnouncements] = React.useState<Announcement[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState(false);
+  const [dialogOpen, setDialogOpen] = React.useState(false);
+  const [refreshKey, setRefreshKey] = React.useState(0);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -93,10 +98,17 @@ export default function AnnouncementsPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [refreshKey]);
 
   const pinned = announcements.filter((a) => a.pinned);
   const rest = announcements.filter((a) => !a.pinned);
+  const now = new Date();
+  const publishedThisMonth = announcements.filter(
+    (a) =>
+      new Date(a.date).getFullYear() === now.getFullYear() &&
+      new Date(a.date).getMonth() === now.getMonth()
+  ).length;
+  const latest = announcements.length > 0 ? announcements[0] : null;
 
   return (
     <div className="mx-auto max-w-[1400px] space-y-6 animate-fade-up">
@@ -104,7 +116,7 @@ export default function AnnouncementsPage() {
         title="Announcements"
         description="Company news, policy updates, and upcoming events."
         actions={
-          <Button>
+          <Button onClick={() => setDialogOpen(true)}>
             <Plus className="h-4 w-4" /> New Announcement
           </Button>
         }
@@ -199,9 +211,9 @@ export default function AnnouncementsPage() {
             <div className="mt-4 space-y-3">
               {[
                 { label: "Total announcements", value: String(announcements.length) },
-                { label: "Published this month", value: "—" },
+                { label: "Published this month", value: String(publishedThisMonth) },
                 { label: "Pinned", value: String(pinned.length) },
-                { label: "Drafts awaiting review", value: "—" },
+                { label: "Latest", value: latest ? formatDateTime(latest.date) : "—" },
               ].map((row) => (
                 <div
                   key={row.label}
@@ -215,32 +227,40 @@ export default function AnnouncementsPage() {
           </div>
 
           <div className="rounded-[20px] border border-border bg-card p-6 shadow-[0_6px_24px_rgba(0,0,0,0.04)]">
-            <h3 className="text-base font-semibold">Audience Reach</h3>
+            <h3 className="text-base font-semibold">By Category</h3>
             <div className="mt-4 space-y-3">
-              {[
-                { label: "All employees", value: "—", pct: "100%" },
-                { label: "Opened the latest notice", value: "—", pct: "89%" },
-                { label: "Marked as read", value: "—", pct: "82%" },
-              ].map((row) => (
-                <div key={row.label}>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">{row.label}</span>
-                    <span className="font-medium">
-                      {row.value} · {row.pct}
-                    </span>
+              {(Object.keys(categoryMeta) as Category[]).map((category) => {
+                const count = announcements.filter((a) => a.category === category).length;
+                const pct = announcements.length > 0 ? Math.round((count / announcements.length) * 100) : 0;
+                return (
+                  <div key={category}>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">
+                        {category.charAt(0) + category.slice(1).toLowerCase()}
+                      </span>
+                      <span className="font-medium">
+                        {count} · {pct}%
+                      </span>
+                    </div>
+                    <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-muted">
+                      <div
+                        className="h-full rounded-full bg-primary"
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
                   </div>
-                  <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-muted">
-                    <div
-                      className="h-full rounded-full bg-primary"
-                      style={{ width: row.pct }}
-                    />
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </aside>
       </div>
+
+      <AnnouncementFormDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        onPublished={() => setRefreshKey((k) => k + 1)}
+      />
     </div>
   );
 }

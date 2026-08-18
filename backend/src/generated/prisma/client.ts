@@ -129,3 +129,8 @@ export type Announcement = Prisma.AnnouncementModel
  * 
  */
 export type CompanySetting = Prisma.CompanySettingModel
+/**
+ * Model AuditLog
+ * 
+ */
+export type AuditLog = Prisma.AuditLogModel
