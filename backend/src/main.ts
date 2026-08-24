@@ -2,10 +2,13 @@ import "dotenv/config";
 import { NestFactory } from "@nestjs/core";
 import { ValidationPipe, Logger } from "@nestjs/common";
 import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger";
+import helmet from "helmet";
 import { AppModule } from "./app.module";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  app.use(helmet());
 
   app.setGlobalPrefix("api");
   app.enableCors({
@@ -21,14 +24,16 @@ async function bootstrap() {
     })
   );
 
-  const config = new DocumentBuilder()
-    .setTitle("Digital Wave HRM API")
-    .setDescription("Enterprise Human Resource Management API")
-    .setVersion("1.0")
-    .addBearerAuth()
-    .build();
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup("api-docs", app, document);
+  if (process.env.NODE_ENV !== "production") {
+    const config = new DocumentBuilder()
+      .setTitle("Digital Wave HRM API")
+      .setDescription("Enterprise Human Resource Management API")
+      .setVersion("1.0")
+      .addBearerAuth()
+      .build();
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup("api-docs", app, document);
+  }
 
   const port = process.env.PORT ?? 3001;
   await app.listen(port);
