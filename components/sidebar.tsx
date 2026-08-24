@@ -20,8 +20,8 @@ export function Sidebar() {
   const { user } = useAuth();
   const pathname = usePathname();
   const [search, setSearch] = React.useState("");
-  const [favorites, setFavorites] = React.useState<string[]>(["", "/employees"]);
-  const [recent, setRecent] = React.useState<string[]>(["/payroll", "/leave"]);
+  const [favorites, setFavorites] = React.useState<string[]>([]);
+  const [recent, setRecent] = React.useState<string[]>([]);
   const [prevPathname, setPrevPathname] = React.useState(pathname);
 
   if (prevPathname !== pathname) {

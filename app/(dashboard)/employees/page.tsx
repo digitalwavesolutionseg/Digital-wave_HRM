@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Download, Filter, Plus, Search } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/ui/page-header";
@@ -16,7 +17,16 @@ interface DepartmentOption {
 }
 
 export default function EmployeesPage() {
-  const [search, setSearch] = useState("");
+  return (
+    <Suspense>
+      <EmployeesPageContent />
+    </Suspense>
+  );
+}
+
+function EmployeesPageContent() {
+  const searchParams = useSearchParams();
+  const [search, setSearch] = useState(searchParams.get("q") ?? "");
   const [departmentFilter, setDepartmentFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [departments, setDepartments] = useState<DepartmentOption[]>([]);
