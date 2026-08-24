@@ -141,6 +141,9 @@ model User {
   refreshToken            String?
   passwordResetOtp        String?
   passwordResetOtpExpires DateTime?
+  failedLoginAttempts     Int           @default(0)
+  lockoutUntil            DateTime?
+  passwordChangedAt       DateTime?
   employee                Employee?
   interviews              Interview[]
   announcements           Announcement[]

@@ -20,8 +20,18 @@ export type UserModel = runtime.Types.Result.DefaultSelection<Prisma.$UserPayloa
 
 export type AggregateUser = {
   _count: UserCountAggregateOutputType | null
+  _avg: UserAvgAggregateOutputType | null
+  _sum: UserSumAggregateOutputType | null
   _min: UserMinAggregateOutputType | null
   _max: UserMaxAggregateOutputType | null
+}
+
+export type UserAvgAggregateOutputType = {
+  failedLoginAttempts: number | null
+}
+
+export type UserSumAggregateOutputType = {
+  failedLoginAttempts: number | null
 }
 
 export type UserMinAggregateOutputType = {
@@ -36,6 +46,9 @@ export type UserMinAggregateOutputType = {
   refreshToken: string | null
   passwordResetOtp: string | null
   passwordResetOtpExpires: Date | null
+  failedLoginAttempts: number | null
+  lockoutUntil: Date | null
+  passwordChangedAt: Date | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -52,6 +65,9 @@ export type UserMaxAggregateOutputType = {
   refreshToken: string | null
   passwordResetOtp: string | null
   passwordResetOtpExpires: Date | null
+  failedLoginAttempts: number | null
+  lockoutUntil: Date | null
+  passwordChangedAt: Date | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -68,11 +84,22 @@ export type UserCountAggregateOutputType = {
   refreshToken: number
   passwordResetOtp: number
   passwordResetOtpExpires: number
+  failedLoginAttempts: number
+  lockoutUntil: number
+  passwordChangedAt: number
   createdAt: number
   updatedAt: number
   _all: number
 }
 
+
+export type UserAvgAggregateInputType = {
+  failedLoginAttempts?: true
+}
+
+export type UserSumAggregateInputType = {
+  failedLoginAttempts?: true
+}
 
 export type UserMinAggregateInputType = {
   id?: true
@@ -86,6 +113,9 @@ export type UserMinAggregateInputType = {
   refreshToken?: true
   passwordResetOtp?: true
   passwordResetOtpExpires?: true
+  failedLoginAttempts?: true
+  lockoutUntil?: true
+  passwordChangedAt?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -102,6 +132,9 @@ export type UserMaxAggregateInputType = {
   refreshToken?: true
   passwordResetOtp?: true
   passwordResetOtpExpires?: true
+  failedLoginAttempts?: true
+  lockoutUntil?: true
+  passwordChangedAt?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -118,6 +151,9 @@ export type UserCountAggregateInputType = {
   refreshToken?: true
   passwordResetOtp?: true
   passwordResetOtpExpires?: true
+  failedLoginAttempts?: true
+  lockoutUntil?: true
+  passwordChangedAt?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -161,6 +197,18 @@ export type UserAggregateArgs<ExtArgs extends runtime.Types.Extensions.InternalA
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
    * 
+   * Select which fields to average
+  **/
+  _avg?: UserAvgAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   * 
+   * Select which fields to sum
+  **/
+  _sum?: UserSumAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   * 
    * Select which fields to find the minimum value
   **/
   _min?: UserMinAggregateInputType
@@ -191,6 +239,8 @@ export type UserGroupByArgs<ExtArgs extends runtime.Types.Extensions.InternalArg
   take?: number
   skip?: number
   _count?: UserCountAggregateInputType | true
+  _avg?: UserAvgAggregateInputType
+  _sum?: UserSumAggregateInputType
   _min?: UserMinAggregateInputType
   _max?: UserMaxAggregateInputType
 }
@@ -207,9 +257,14 @@ export type UserGroupByOutputType = {
   refreshToken: string | null
   passwordResetOtp: string | null
   passwordResetOtpExpires: Date | null
+  failedLoginAttempts: number
+  lockoutUntil: Date | null
+  passwordChangedAt: Date | null
   createdAt: Date
   updatedAt: Date
   _count: UserCountAggregateOutputType | null
+  _avg: UserAvgAggregateOutputType | null
+  _sum: UserSumAggregateOutputType | null
   _min: UserMinAggregateOutputType | null
   _max: UserMaxAggregateOutputType | null
 }
@@ -244,6 +299,9 @@ export type UserWhereInput = {
   refreshToken?: Prisma.StringNullableFilter<"User"> | string | null
   passwordResetOtp?: Prisma.StringNullableFilter<"User"> | string | null
   passwordResetOtpExpires?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
+  failedLoginAttempts?: Prisma.IntFilter<"User"> | number
+  lockoutUntil?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
+  passwordChangedAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
   employee?: Prisma.XOR<Prisma.EmployeeNullableScalarRelationFilter, Prisma.EmployeeWhereInput> | null
@@ -264,6 +322,9 @@ export type UserOrderByWithRelationInput = {
   refreshToken?: Prisma.SortOrderInput | Prisma.SortOrder
   passwordResetOtp?: Prisma.SortOrderInput | Prisma.SortOrder
   passwordResetOtpExpires?: Prisma.SortOrderInput | Prisma.SortOrder
+  failedLoginAttempts?: Prisma.SortOrder
+  lockoutUntil?: Prisma.SortOrderInput | Prisma.SortOrder
+  passwordChangedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   employee?: Prisma.EmployeeOrderByWithRelationInput
@@ -287,6 +348,9 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   refreshToken?: Prisma.StringNullableFilter<"User"> | string | null
   passwordResetOtp?: Prisma.StringNullableFilter<"User"> | string | null
   passwordResetOtpExpires?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
+  failedLoginAttempts?: Prisma.IntFilter<"User"> | number
+  lockoutUntil?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
+  passwordChangedAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
   employee?: Prisma.XOR<Prisma.EmployeeNullableScalarRelationFilter, Prisma.EmployeeWhereInput> | null
@@ -307,11 +371,16 @@ export type UserOrderByWithAggregationInput = {
   refreshToken?: Prisma.SortOrderInput | Prisma.SortOrder
   passwordResetOtp?: Prisma.SortOrderInput | Prisma.SortOrder
   passwordResetOtpExpires?: Prisma.SortOrderInput | Prisma.SortOrder
+  failedLoginAttempts?: Prisma.SortOrder
+  lockoutUntil?: Prisma.SortOrderInput | Prisma.SortOrder
+  passwordChangedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.UserCountOrderByAggregateInput
+  _avg?: Prisma.UserAvgOrderByAggregateInput
   _max?: Prisma.UserMaxOrderByAggregateInput
   _min?: Prisma.UserMinOrderByAggregateInput
+  _sum?: Prisma.UserSumOrderByAggregateInput
 }
 
 export type UserScalarWhereWithAggregatesInput = {
@@ -329,6 +398,9 @@ export type UserScalarWhereWithAggregatesInput = {
   refreshToken?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
   passwordResetOtp?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
   passwordResetOtpExpires?: Prisma.DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
+  failedLoginAttempts?: Prisma.IntWithAggregatesFilter<"User"> | number
+  lockoutUntil?: Prisma.DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
+  passwordChangedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"User"> | Date | string
 }
@@ -345,6 +417,9 @@ export type UserCreateInput = {
   refreshToken?: string | null
   passwordResetOtp?: string | null
   passwordResetOtpExpires?: Date | string | null
+  failedLoginAttempts?: number
+  lockoutUntil?: Date | string | null
+  passwordChangedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   employee?: Prisma.EmployeeCreateNestedOneWithoutUserInput
@@ -365,6 +440,9 @@ export type UserUncheckedCreateInput = {
   refreshToken?: string | null
   passwordResetOtp?: string | null
   passwordResetOtpExpires?: Date | string | null
+  failedLoginAttempts?: number
+  lockoutUntil?: Date | string | null
+  passwordChangedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   employee?: Prisma.EmployeeUncheckedCreateNestedOneWithoutUserInput
@@ -385,6 +463,9 @@ export type UserUpdateInput = {
   refreshToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   passwordResetOtp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   passwordResetOtpExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  failedLoginAttempts?: Prisma.IntFieldUpdateOperationsInput | number
+  lockoutUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   employee?: Prisma.EmployeeUpdateOneWithoutUserNestedInput
@@ -405,6 +486,9 @@ export type UserUncheckedUpdateInput = {
   refreshToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   passwordResetOtp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   passwordResetOtpExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  failedLoginAttempts?: Prisma.IntFieldUpdateOperationsInput | number
+  lockoutUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   employee?: Prisma.EmployeeUncheckedUpdateOneWithoutUserNestedInput
@@ -425,6 +509,9 @@ export type UserCreateManyInput = {
   refreshToken?: string | null
   passwordResetOtp?: string | null
   passwordResetOtpExpires?: Date | string | null
+  failedLoginAttempts?: number
+  lockoutUntil?: Date | string | null
+  passwordChangedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -441,6 +528,9 @@ export type UserUpdateManyMutationInput = {
   refreshToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   passwordResetOtp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   passwordResetOtpExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  failedLoginAttempts?: Prisma.IntFieldUpdateOperationsInput | number
+  lockoutUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -457,6 +547,9 @@ export type UserUncheckedUpdateManyInput = {
   refreshToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   passwordResetOtp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   passwordResetOtpExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  failedLoginAttempts?: Prisma.IntFieldUpdateOperationsInput | number
+  lockoutUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -473,8 +566,15 @@ export type UserCountOrderByAggregateInput = {
   refreshToken?: Prisma.SortOrder
   passwordResetOtp?: Prisma.SortOrder
   passwordResetOtpExpires?: Prisma.SortOrder
+  failedLoginAttempts?: Prisma.SortOrder
+  lockoutUntil?: Prisma.SortOrder
+  passwordChangedAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+}
+
+export type UserAvgOrderByAggregateInput = {
+  failedLoginAttempts?: Prisma.SortOrder
 }
 
 export type UserMaxOrderByAggregateInput = {
@@ -489,6 +589,9 @@ export type UserMaxOrderByAggregateInput = {
   refreshToken?: Prisma.SortOrder
   passwordResetOtp?: Prisma.SortOrder
   passwordResetOtpExpires?: Prisma.SortOrder
+  failedLoginAttempts?: Prisma.SortOrder
+  lockoutUntil?: Prisma.SortOrder
+  passwordChangedAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -505,8 +608,15 @@ export type UserMinOrderByAggregateInput = {
   refreshToken?: Prisma.SortOrder
   passwordResetOtp?: Prisma.SortOrder
   passwordResetOtpExpires?: Prisma.SortOrder
+  failedLoginAttempts?: Prisma.SortOrder
+  lockoutUntil?: Prisma.SortOrder
+  passwordChangedAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+}
+
+export type UserSumOrderByAggregateInput = {
+  failedLoginAttempts?: Prisma.SortOrder
 }
 
 export type UserNullableScalarRelationFilter = {
@@ -537,6 +647,14 @@ export type BoolFieldUpdateOperationsInput = {
 
 export type NullableDateTimeFieldUpdateOperationsInput = {
   set?: Date | string | null
+}
+
+export type IntFieldUpdateOperationsInput = {
+  set?: number
+  increment?: number
+  decrement?: number
+  multiply?: number
+  divide?: number
 }
 
 export type DateTimeFieldUpdateOperationsInput = {
@@ -615,6 +733,9 @@ export type UserCreateWithoutEmployeeInput = {
   refreshToken?: string | null
   passwordResetOtp?: string | null
   passwordResetOtpExpires?: Date | string | null
+  failedLoginAttempts?: number
+  lockoutUntil?: Date | string | null
+  passwordChangedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   interviews?: Prisma.InterviewCreateNestedManyWithoutInterviewerInput
@@ -634,6 +755,9 @@ export type UserUncheckedCreateWithoutEmployeeInput = {
   refreshToken?: string | null
   passwordResetOtp?: string | null
   passwordResetOtpExpires?: Date | string | null
+  failedLoginAttempts?: number
+  lockoutUntil?: Date | string | null
+  passwordChangedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   interviews?: Prisma.InterviewUncheckedCreateNestedManyWithoutInterviewerInput
@@ -669,6 +793,9 @@ export type UserUpdateWithoutEmployeeInput = {
   refreshToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   passwordResetOtp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   passwordResetOtpExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  failedLoginAttempts?: Prisma.IntFieldUpdateOperationsInput | number
+  lockoutUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   interviews?: Prisma.InterviewUpdateManyWithoutInterviewerNestedInput
@@ -688,6 +815,9 @@ export type UserUncheckedUpdateWithoutEmployeeInput = {
   refreshToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   passwordResetOtp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   passwordResetOtpExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  failedLoginAttempts?: Prisma.IntFieldUpdateOperationsInput | number
+  lockoutUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   interviews?: Prisma.InterviewUncheckedUpdateManyWithoutInterviewerNestedInput
@@ -707,6 +837,9 @@ export type UserCreateWithoutInterviewsInput = {
   refreshToken?: string | null
   passwordResetOtp?: string | null
   passwordResetOtpExpires?: Date | string | null
+  failedLoginAttempts?: number
+  lockoutUntil?: Date | string | null
+  passwordChangedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   employee?: Prisma.EmployeeCreateNestedOneWithoutUserInput
@@ -726,6 +859,9 @@ export type UserUncheckedCreateWithoutInterviewsInput = {
   refreshToken?: string | null
   passwordResetOtp?: string | null
   passwordResetOtpExpires?: Date | string | null
+  failedLoginAttempts?: number
+  lockoutUntil?: Date | string | null
+  passwordChangedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   employee?: Prisma.EmployeeUncheckedCreateNestedOneWithoutUserInput
@@ -761,6 +897,9 @@ export type UserUpdateWithoutInterviewsInput = {
   refreshToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   passwordResetOtp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   passwordResetOtpExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  failedLoginAttempts?: Prisma.IntFieldUpdateOperationsInput | number
+  lockoutUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   employee?: Prisma.EmployeeUpdateOneWithoutUserNestedInput
@@ -780,6 +919,9 @@ export type UserUncheckedUpdateWithoutInterviewsInput = {
   refreshToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   passwordResetOtp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   passwordResetOtpExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  failedLoginAttempts?: Prisma.IntFieldUpdateOperationsInput | number
+  lockoutUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   employee?: Prisma.EmployeeUncheckedUpdateOneWithoutUserNestedInput
@@ -799,6 +941,9 @@ export type UserCreateWithoutAnnouncementsInput = {
   refreshToken?: string | null
   passwordResetOtp?: string | null
   passwordResetOtpExpires?: Date | string | null
+  failedLoginAttempts?: number
+  lockoutUntil?: Date | string | null
+  passwordChangedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   employee?: Prisma.EmployeeCreateNestedOneWithoutUserInput
@@ -818,6 +963,9 @@ export type UserUncheckedCreateWithoutAnnouncementsInput = {
   refreshToken?: string | null
   passwordResetOtp?: string | null
   passwordResetOtpExpires?: Date | string | null
+  failedLoginAttempts?: number
+  lockoutUntil?: Date | string | null
+  passwordChangedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   employee?: Prisma.EmployeeUncheckedCreateNestedOneWithoutUserInput
@@ -853,6 +1001,9 @@ export type UserUpdateWithoutAnnouncementsInput = {
   refreshToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   passwordResetOtp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   passwordResetOtpExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  failedLoginAttempts?: Prisma.IntFieldUpdateOperationsInput | number
+  lockoutUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   employee?: Prisma.EmployeeUpdateOneWithoutUserNestedInput
@@ -872,6 +1023,9 @@ export type UserUncheckedUpdateWithoutAnnouncementsInput = {
   refreshToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   passwordResetOtp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   passwordResetOtpExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  failedLoginAttempts?: Prisma.IntFieldUpdateOperationsInput | number
+  lockoutUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   employee?: Prisma.EmployeeUncheckedUpdateOneWithoutUserNestedInput
@@ -891,6 +1045,9 @@ export type UserCreateWithoutAuditLogsInput = {
   refreshToken?: string | null
   passwordResetOtp?: string | null
   passwordResetOtpExpires?: Date | string | null
+  failedLoginAttempts?: number
+  lockoutUntil?: Date | string | null
+  passwordChangedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   employee?: Prisma.EmployeeCreateNestedOneWithoutUserInput
@@ -910,6 +1067,9 @@ export type UserUncheckedCreateWithoutAuditLogsInput = {
   refreshToken?: string | null
   passwordResetOtp?: string | null
   passwordResetOtpExpires?: Date | string | null
+  failedLoginAttempts?: number
+  lockoutUntil?: Date | string | null
+  passwordChangedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   employee?: Prisma.EmployeeUncheckedCreateNestedOneWithoutUserInput
@@ -945,6 +1105,9 @@ export type UserUpdateWithoutAuditLogsInput = {
   refreshToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   passwordResetOtp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   passwordResetOtpExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  failedLoginAttempts?: Prisma.IntFieldUpdateOperationsInput | number
+  lockoutUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   employee?: Prisma.EmployeeUpdateOneWithoutUserNestedInput
@@ -964,6 +1127,9 @@ export type UserUncheckedUpdateWithoutAuditLogsInput = {
   refreshToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   passwordResetOtp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   passwordResetOtpExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  failedLoginAttempts?: Prisma.IntFieldUpdateOperationsInput | number
+  lockoutUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   employee?: Prisma.EmployeeUncheckedUpdateOneWithoutUserNestedInput
@@ -1032,6 +1198,9 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   refreshToken?: boolean
   passwordResetOtp?: boolean
   passwordResetOtpExpires?: boolean
+  failedLoginAttempts?: boolean
+  lockoutUntil?: boolean
+  passwordChangedAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   employee?: boolean | Prisma.User$employeeArgs<ExtArgs>
@@ -1053,6 +1222,9 @@ export type UserSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   refreshToken?: boolean
   passwordResetOtp?: boolean
   passwordResetOtpExpires?: boolean
+  failedLoginAttempts?: boolean
+  lockoutUntil?: boolean
+  passwordChangedAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["user"]>
@@ -1069,6 +1241,9 @@ export type UserSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   refreshToken?: boolean
   passwordResetOtp?: boolean
   passwordResetOtpExpires?: boolean
+  failedLoginAttempts?: boolean
+  lockoutUntil?: boolean
+  passwordChangedAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["user"]>
@@ -1085,11 +1260,14 @@ export type UserSelectScalar = {
   refreshToken?: boolean
   passwordResetOtp?: boolean
   passwordResetOtpExpires?: boolean
+  failedLoginAttempts?: boolean
+  lockoutUntil?: boolean
+  passwordChangedAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "email" | "password" | "firstName" | "lastName" | "role" | "avatarUrl" | "isActive" | "refreshToken" | "passwordResetOtp" | "passwordResetOtpExpires" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
+export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "email" | "password" | "firstName" | "lastName" | "role" | "avatarUrl" | "isActive" | "refreshToken" | "passwordResetOtp" | "passwordResetOtpExpires" | "failedLoginAttempts" | "lockoutUntil" | "passwordChangedAt" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
 export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   employee?: boolean | Prisma.User$employeeArgs<ExtArgs>
   interviews?: boolean | Prisma.User$interviewsArgs<ExtArgs>
@@ -1120,6 +1298,9 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     refreshToken: string | null
     passwordResetOtp: string | null
     passwordResetOtpExpires: Date | null
+    failedLoginAttempts: number
+    lockoutUntil: Date | null
+    passwordChangedAt: Date | null
     createdAt: Date
     updatedAt: Date
   }, ExtArgs["result"]["user"]>
@@ -1560,6 +1741,9 @@ export interface UserFieldRefs {
   readonly refreshToken: Prisma.FieldRef<"User", 'String'>
   readonly passwordResetOtp: Prisma.FieldRef<"User", 'String'>
   readonly passwordResetOtpExpires: Prisma.FieldRef<"User", 'DateTime'>
+  readonly failedLoginAttempts: Prisma.FieldRef<"User", 'Int'>
+  readonly lockoutUntil: Prisma.FieldRef<"User", 'DateTime'>
+  readonly passwordChangedAt: Prisma.FieldRef<"User", 'DateTime'>
   readonly createdAt: Prisma.FieldRef<"User", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"User", 'DateTime'>
 }

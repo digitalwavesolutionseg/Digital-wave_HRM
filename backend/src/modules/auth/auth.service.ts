@@ -4,7 +4,18 @@ import * as bcrypt from "bcryptjs";
 import { randomInt } from "crypto";
 import { Resend } from "resend";
 import { PrismaService } from "../../prisma/prisma.service";
-import { ForgotPasswordDto, LoginDto, RefreshTokenDto, RegisterDto, ResetPasswordDto } from "./dto/auth.dto";
+import { AuditService } from "../audit/audit.service";
+import {
+  ChangePasswordDto,
+  ForgotPasswordDto,
+  LoginDto,
+  RefreshTokenDto,
+  RegisterDto,
+  ResetPasswordDto,
+} from "./dto/auth.dto";
+
+const MAX_FAILED_LOGIN_ATTEMPTS = 5;
+const LOCKOUT_MINUTES = 15;
 
 interface JwtPayload {
   sub: string;
@@ -18,7 +29,8 @@ export class AuthService {
 
   constructor(
     private prisma: PrismaService,
-    private jwtService: JwtService
+    private jwtService: JwtService,
+    private auditService: AuditService
   ) {
     this.resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
   }
@@ -32,9 +44,34 @@ export class AuthService {
   }
 
   async login(dto: LoginDto) {
-    const user = await this.validateUser(dto.email, dto.password);
+    const user = await this.prisma.user.findUnique({ where: { email: dto.email } });
     if (!user) throw new UnauthorizedException("Invalid credentials");
+
+    if (user.lockoutUntil && user.lockoutUntil > new Date()) {
+      throw new UnauthorizedException(
+        "Account temporarily locked after repeated failed attempts. Try again later."
+      );
+    }
+
+    const valid = await bcrypt.compare(dto.password, user.password);
+    if (!valid) {
+      const attempts = user.failedLoginAttempts + 1;
+      const data: { failedLoginAttempts: number; lockoutUntil?: Date } = {
+        failedLoginAttempts: attempts,
+      };
+      if (attempts >= MAX_FAILED_LOGIN_ATTEMPTS) {
+        data.lockoutUntil = new Date(Date.now() + LOCKOUT_MINUTES * 60 * 1000);
+      }
+      await this.prisma.user.update({ where: { id: user.id }, data });
+      throw new UnauthorizedException("Invalid credentials");
+    }
+
     if (!user.isActive) throw new UnauthorizedException("Account is disabled");
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { failedLoginAttempts: 0, lockoutUntil: null },
+    });
 
     const tokens = await this.generateTokens(user.id, user.email, user.role);
     await this.prisma.user.update({
@@ -49,6 +86,35 @@ export class AuthService {
     };
   }
 
+  async changePassword(userId: string, dto: ChangePasswordDto) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new UnauthorizedException();
+
+    const valid = await bcrypt.compare(dto.currentPassword, user.password);
+    if (!valid) throw new BadRequestException("Current password is incorrect");
+
+    const passwordHash = await bcrypt.hash(dto.newPassword, 12);
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        password: passwordHash,
+        passwordChangedAt: new Date(),
+        refreshToken: null,
+        failedLoginAttempts: 0,
+        lockoutUntil: null,
+      },
+    });
+
+    await this.auditService.record({
+      actorId: userId,
+      action: "auth.password.change",
+      entity: "user",
+      entityId: userId,
+    });
+
+    return { success: true };
+  }
+
   async register(dto: RegisterDto) {
     const existing = await this.prisma.user.findUnique({ where: { email: dto.email } });
     if (existing) throw new ConflictException("Email already registered");
@@ -61,7 +127,15 @@ export class AuthService {
         firstName: dto.firstName,
         lastName: dto.lastName,
         role: "EMPLOYEE",
+        passwordChangedAt: new Date(),
       },
+    });
+
+    await this.auditService.record({
+      actorId: user.id,
+      action: "auth.register",
+      entity: "user",
+      entityId: user.id,
     });
     const tokens = await this.generateTokens(user.id, user.email, user.role);
     await this.prisma.user.update({
@@ -156,10 +230,20 @@ export class AuthService {
       where: { id: user.id },
       data: {
         password: passwordHash,
+        passwordChangedAt: new Date(),
         passwordResetOtp: null,
         passwordResetOtpExpires: null,
         refreshToken: null,
+        failedLoginAttempts: 0,
+        lockoutUntil: null,
       },
+    });
+
+    await this.auditService.record({
+      actorId: user.id,
+      action: "auth.password.reset",
+      entity: "user",
+      entityId: user.id,
     });
 
     return { success: true };
