@@ -8,7 +8,7 @@ import {
   useMemo,
   useState,
 } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import {
   api,
   ApiError,
@@ -39,13 +39,17 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const isAuthPage = pathname === "/login" || pathname === "/register";
 
   useEffect(() => {
     const token = getAccessToken();
     if (!token) {
       setLoading(false);
+      if (!isAuthPage) router.replace("/login");
       return;
     }
     api
@@ -54,9 +58,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .catch(() => {
         clearTokens();
         setUser(null);
+        if (!isAuthPage) router.replace("/login");
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, [isAuthPage, router]);
 
   const login = useCallback(
     async (email: string, password: string) => {
