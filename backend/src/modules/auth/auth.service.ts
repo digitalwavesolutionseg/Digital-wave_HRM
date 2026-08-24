@@ -1,6 +1,7 @@
 import { Injectable, UnauthorizedException, ConflictException, BadRequestException } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import * as bcrypt from "bcryptjs";
+import { randomInt } from "crypto";
 import { Resend } from "resend";
 import { PrismaService } from "../../prisma/prisma.service";
 import { ForgotPasswordDto, LoginDto, RefreshTokenDto, RegisterDto, ResetPasswordDto } from "./dto/auth.dto";
@@ -165,7 +166,7 @@ export class AuthService {
   }
 
   private generateOtp(): string {
-    return String(Math.floor(100000 + Math.random() * 900000));
+    return randomInt(0, 1_000_000).toString().padStart(6, "0");
   }
 
   private async sendOtpEmail(email: string, firstName: string, otp: string) {
