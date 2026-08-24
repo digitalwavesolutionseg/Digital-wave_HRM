@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
+import { EmployeeFormDialog } from "../employee-form-dialog";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
 type EmploymentType = "FULL_TIME" | "PART_TIME" | "CONTRACT" | "INTERN" | "PROBATION";
@@ -31,12 +32,14 @@ type AttendanceStatus = "PRESENT" | "LATE" | "ABSENT" | "LEAVE";
 interface EmployeeDetail {
   id: string;
   employeeId: string;
+  departmentId: string;
+  positionId: string;
   photo?: string | null;
   nationalId?: string | null;
   passportNo?: string | null;
   address?: string | null;
   birthDate?: string | null;
-  gender?: string | null;
+  gender: string;
   joiningDate: string;
   employmentType: EmploymentType;
   status: EmployeeStatus;
@@ -81,6 +84,8 @@ export default function EmployeeDetailPage() {
   const [employee, setEmployee] = React.useState<EmployeeDetail | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState(false);
+  const [editOpen, setEditOpen] = React.useState(false);
+  const [refreshKey, setRefreshKey] = React.useState(0);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -100,7 +105,7 @@ export default function EmployeeDetailPage() {
     return () => {
       cancelled = true;
     };
-  }, [id]);
+  }, [id, refreshKey]);
 
   if (loading) {
     return (
@@ -155,7 +160,7 @@ export default function EmployeeDetailPage() {
         title="Employee Profile"
         description={employee.employeeId}
         actions={
-          <Button>
+          <Button onClick={() => setEditOpen(true)}>
             <Pencil className="h-4 w-4" /> Edit
           </Button>
         }
@@ -246,6 +251,13 @@ export default function EmployeeDetailPage() {
           </CardContent>
         </Card>
       </div>
+
+      <EmployeeFormDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        editing={employee}
+        onSaved={() => setRefreshKey((k) => k + 1)}
+      />
     </div>
   );
 }

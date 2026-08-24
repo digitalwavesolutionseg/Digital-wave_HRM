@@ -2,7 +2,7 @@
 
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Download, Filter, Plus, Search } from "lucide-react";
+import { Download, Plus, Search } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
@@ -107,9 +107,6 @@ function EmployeesPageContent() {
       <div className="flex items-center gap-2 sm:ml-auto">
         <Button variant="outline" size="sm" onClick={handleExport}>
           <Download className="h-4 w-4" /> Export
-        </Button>
-        <Button variant="outline" size="sm">
-          <Filter className="h-4 w-4" />
         </Button>
         <Button size="sm" onClick={() => { setEditing(null); setDialogOpen(true); }}>
           <Plus className="h-4 w-4" /> Add Employee

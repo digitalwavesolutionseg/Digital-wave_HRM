@@ -3,7 +3,7 @@
 import * as React from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { toast } from "sonner";
-import { Building2, Eye, Pencil, Trash2, Users } from "lucide-react";
+import { Building2, Pencil, Trash2, Users } from "lucide-react";
 import { DataTable } from "@/components/ui/data-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -74,9 +74,6 @@ function makeColumns(onEdit: (item: DepartmentApiItem) => void, onDelete: (id: s
       header: () => <span className="sr-only">Actions</span>,
       cell: ({ row }) => (
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="iconSm" aria-label="View">
-            <Eye className="h-4 w-4" />
-          </Button>
           <Button
             variant="ghost"
             size="iconSm"

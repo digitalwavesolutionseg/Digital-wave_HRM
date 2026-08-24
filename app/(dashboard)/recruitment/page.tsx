@@ -218,15 +218,6 @@ export default function RecruitmentPage() {
         header: "Status",
         cell: ({ row }) => <JobStatusBadge status={row.original.status} />,
       },
-      {
-        id: "actions",
-        header: "",
-        cell: () => (
-          <Button variant="ghost" size="sm">
-            View
-          </Button>
-        ),
-      },
     ],
     []
   );

@@ -15,7 +15,6 @@ import {
 } from "date-fns";
 import {
   AlarmClock,
-  CalendarRange,
   Clock,
   Timer,
   UserCheck,
@@ -100,8 +99,6 @@ export default function AttendancePage() {
   const today = new Date();
   const days = buildCalendar(today);
   const monthStart = startOfMonth(today);
-  const monthEnd = endOfMonth(today);
-  const rangeLabel = `${format(monthStart, "MMM d")} – ${format(monthEnd, "MMM d, yyyy")}`;
 
   const currentRecord = React.useMemo(() => {
     if (!user) return null;
@@ -137,14 +134,9 @@ export default function AttendancePage() {
         title="Attendance"
         description="Track check-ins, working hours, and daily presence across the team."
         actions={
-          <>
-            <Button variant="outline">
-              <CalendarRange className="h-4 w-4" /> {rangeLabel}
-            </Button>
-            <Button variant={isClockedIn ? "outline" : "default"} onClick={() => setClockOpen(true)}>
-              <Clock className="h-4 w-4" /> {isClockedIn ? "Clock Out" : "Clock In"}
-            </Button>
-          </>
+          <Button variant={isClockedIn ? "outline" : "default"} onClick={() => setClockOpen(true)}>
+            <Clock className="h-4 w-4" /> {isClockedIn ? "Clock Out" : "Clock In"}
+          </Button>
         }
       />
 
