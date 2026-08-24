@@ -12,6 +12,9 @@ import {
   Bell,
   Save,
   CheckCircle2,
+  Sparkles,
+  PlugZap,
+  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/ui/page-header";
@@ -34,7 +37,8 @@ type SectionId =
   | "templates"
   | "branding"
   | "permissions"
-  | "notifications";
+  | "notifications"
+  | "ai";
 
 const sections: { id: SectionId; label: string; icon: React.ReactNode }[] = [
   { id: "company", label: "Company Settings", icon: <Building2 className="h-4 w-4" /> },
@@ -45,6 +49,7 @@ const sections: { id: SectionId; label: string; icon: React.ReactNode }[] = [
   { id: "branding", label: "Branding", icon: <Palette className="h-4 w-4" /> },
   { id: "permissions", label: "Permissions", icon: <Shield className="h-4 w-4" /> },
   { id: "notifications", label: "Notifications", icon: <Bell className="h-4 w-4" /> },
+  { id: "ai", label: "AI Assistant", icon: <Sparkles className="h-4 w-4" /> },
 ];
 
 const ROLE_LABELS: Record<string, string> = {
@@ -143,6 +148,14 @@ export default function SettingsPage() {
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState(false);
   const [savingSection, setSavingSection] = React.useState<SectionId | null>(null);
+  const [ai, setAi] = React.useState<Record<string, unknown> | null>(null);
+  const [aiForm, setAiForm] = React.useState<Record<string, string>>({});
+  const [aiEnabled, setAiEnabled] = React.useState(false);
+  const [aiWriteEnabled, setAiWriteEnabled] = React.useState(false);
+  const [aiKey, setAiKey] = React.useState("");
+  const [aiSaving, setAiSaving] = React.useState(false);
+  const [aiTesting, setAiTesting] = React.useState(false);
+  const [aiTestResult, setAiTestResult] = React.useState<{ ok: boolean; model: string; latencyMs: number; error?: string } | null>(null);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -220,6 +233,93 @@ export default function SettingsPage() {
   };
 
   const setField = (key: string, value: string) => setForm((f) => ({ ...f, [key]: value }));
+
+  React.useEffect(() => {
+    if (active !== "ai" || ai) return;
+    (async () => {
+      try {
+        const { api } = await import("@/lib/api");
+        const s = await api.get<Record<string, unknown>>("/ai/settings");
+        setAi(s);
+        setAiEnabled(Boolean(s.enabled));
+        setAiWriteEnabled(Boolean(s.writeActionsEnabled));
+        setAiForm({
+          provider: String(s.provider ?? "openai-compatible"),
+          baseUrl: String(s.baseUrl ?? ""),
+          model: String(s.model ?? ""),
+          temperature: String(s.temperature ?? 0.2),
+          maxOutputTokens: String(s.maxOutputTokens ?? 1024),
+          requestTimeoutMs: String(s.requestTimeoutMs ?? 60000),
+          monthlyTokenLimit: String(s.monthlyTokenLimit ?? 1000000),
+          perUserMonthlyTokenLimit: String(s.perUserMonthlyTokenLimit ?? 100000),
+          allowedRoles: String(s.allowedRoles ?? ""),
+        });
+      } catch {
+        setAi({ denied: true });
+      }
+    })();
+  }, [active, ai]);
+
+  const saveAiSettings = async () => {
+    setAiSaving(true);
+    try {
+      const { api } = await import("@/lib/api");
+      const s = await api.put<Record<string, unknown>>("/ai/settings", {
+        enabled: aiEnabled,
+        writeActionsEnabled: aiWriteEnabled,
+        provider: aiForm.provider,
+        baseUrl: aiForm.baseUrl || undefined,
+        model: aiForm.model,
+        temperature: Number(aiForm.temperature) || 0.2,
+        maxOutputTokens: Number(aiForm.maxOutputTokens) || 1024,
+        requestTimeoutMs: Number(aiForm.requestTimeoutMs) || 60000,
+        monthlyTokenLimit: Number(aiForm.monthlyTokenLimit) || 1000000,
+        perUserMonthlyTokenLimit: Number(aiForm.perUserMonthlyTokenLimit) || 100000,
+        allowedRoles: aiForm.allowedRoles,
+        ...(aiKey ? { apiKey: aiKey } : {}),
+      });
+      setAi(s);
+      setAiKey("");
+      toast.success("AI Assistant settings saved");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to save AI settings");
+    } finally {
+      setAiSaving(false);
+    }
+  };
+
+  const testAiConnection = async () => {
+    setAiTesting(true);
+    setAiTestResult(null);
+    try {
+      const { api } = await import("@/lib/api");
+      const res = await api.post<{ ok: boolean; model: string; latencyMs: number; error?: string }>(
+        "/ai/settings/test",
+        {
+          baseUrl: aiForm.baseUrl || undefined,
+          model: aiForm.model || undefined,
+          ...(aiKey ? { apiKey: aiKey } : {}),
+        }
+      );
+      setAiTestResult(res);
+    } catch (err) {
+      setAiTestResult({ ok: false, model: "", latencyMs: 0, error: err instanceof Error ? err.message : "Test failed" });
+    } finally {
+      setAiTesting(false);
+    }
+  };
+
+  const removeAiKey = async () => {
+    try {
+      const { api } = await import("@/lib/api");
+      const s = await api.del<Record<string, unknown>>("/ai/settings/api-key");
+      setAi(s);
+      setAiKey("");
+      toast.success("API key removed");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to remove key");
+    }
+  };
 
   const roleColumns: ColumnDef<RoleRow>[] = [
     {
@@ -559,6 +659,161 @@ export default function SettingsPage() {
                     </div>
                   }
                 />
+              </CardContent>
+            </Card>
+          )}
+
+          {active === "ai" && (
+            <Card>
+              <CardHeader>
+                <CardTitle>AI Assistant</CardTitle>
+                <CardDescription>
+                  Configure the provider used by the in-app AI Assistant. The API key is encrypted at
+                  rest and never returned to the browser.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-5">
+                {ai?.denied ? (
+                  <p className="text-sm text-muted-foreground">
+                    Only administrators can configure the AI Assistant.
+                  </p>
+                ) : !ai ? (
+                  <p className="text-sm text-muted-foreground">Loading AI settings...</p>
+                ) : (
+                  <>
+                    <div className="flex flex-col gap-3 rounded-[14px] border border-border p-4">
+                      <label className="flex items-center justify-between text-sm font-medium">
+                        Enable AI Assistant
+                        <input
+                          type="checkbox"
+                          checked={aiEnabled}
+                          onChange={(e) => setAiEnabled(e.target.checked)}
+                          className="h-4 w-4 accent-primary"
+                        />
+                      </label>
+                      <label className="flex items-center justify-between text-sm font-medium text-muted-foreground">
+                        Write actions (coming after tenant-isolation verification)
+                        <input
+                          type="checkbox"
+                          checked={aiWriteEnabled}
+                          disabled
+                          className="h-4 w-4 accent-primary"
+                        />
+                      </label>
+                      <p className="text-xs text-muted-foreground">
+                        Credential source: {String(ai.credentialSource ?? "none")}
+                        {ai.apiKeyMasked ? ` · key ${String(ai.apiKeyMasked)}` : ""}
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                      <FormField label="Provider">
+                        <Select
+                          value={aiForm.provider}
+                          onChange={(e) => setAiForm((f) => ({ ...f, provider: e.target.value }))}
+                        >
+                          <option value="openai-compatible">OpenAI-compatible (OpenAI, Azure, OpenRouter...)</option>
+                        </Select>
+                      </FormField>
+                      <FormField label="API Base URL">
+                        <Input
+                          value={aiForm.baseUrl}
+                          onChange={(e) => setAiForm((f) => ({ ...f, baseUrl: e.target.value }))}
+                          placeholder="https://openrouter.ai/api/v1"
+                        />
+                      </FormField>
+                      <FormField label="API Key" hint={ai.hasApiKey ? `A key is stored (${String(ai.apiKeyMasked)}). Enter a new one to replace it.` : "Never displayed after saving."}>
+                        <Input
+                          type="password"
+                          value={aiKey}
+                          onChange={(e) => setAiKey(e.target.value)}
+                          placeholder="sk-..."
+                          autoComplete="off"
+                        />
+                      </FormField>
+                      <FormField label="Model">
+                        <Input
+                          value={aiForm.model}
+                          onChange={(e) => setAiForm((f) => ({ ...f, model: e.target.value }))}
+                          placeholder="openai/gpt-4o-mini"
+                        />
+                      </FormField>
+                      <FormField label="Temperature">
+                        <Input
+                          type="number"
+                          step="0.1"
+                          min="0"
+                          max="2"
+                          value={aiForm.temperature}
+                          onChange={(e) => setAiForm((f) => ({ ...f, temperature: e.target.value }))}
+                        />
+                      </FormField>
+                      <FormField label="Max Output Tokens">
+                        <Input
+                          type="number"
+                          value={aiForm.maxOutputTokens}
+                          onChange={(e) => setAiForm((f) => ({ ...f, maxOutputTokens: e.target.value }))}
+                        />
+                      </FormField>
+                      <FormField label="Request Timeout (ms)">
+                        <Input
+                          type="number"
+                          value={aiForm.requestTimeoutMs}
+                          onChange={(e) => setAiForm((f) => ({ ...f, requestTimeoutMs: e.target.value }))}
+                        />
+                      </FormField>
+                      <FormField label="Allowed Roles" hint="Comma-separated role codes.">
+                        <Input
+                          value={aiForm.allowedRoles}
+                          onChange={(e) => setAiForm((f) => ({ ...f, allowedRoles: e.target.value }))}
+                          placeholder="SUPER_ADMIN,HR,MANAGER,FINANCE,RECRUITER,EMPLOYEE"
+                        />
+                      </FormField>
+                      <FormField label="Monthly Token Limit (organization)">
+                        <Input
+                          type="number"
+                          value={aiForm.monthlyTokenLimit}
+                          onChange={(e) => setAiForm((f) => ({ ...f, monthlyTokenLimit: e.target.value }))}
+                        />
+                      </FormField>
+                      <FormField label="Monthly Token Limit (per user)">
+                        <Input
+                          type="number"
+                          value={aiForm.perUserMonthlyTokenLimit}
+                          onChange={(e) => setAiForm((f) => ({ ...f, perUserMonthlyTokenLimit: e.target.value }))}
+                        />
+                      </FormField>
+                    </div>
+
+                    {aiTestResult && (
+                      <div
+                        className={cn(
+                          "flex items-center gap-2 rounded-[12px] px-4 py-3 text-sm",
+                          aiTestResult.ok ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"
+                        )}
+                      >
+                        {aiTestResult.ok ? <CheckCircle2 className="h-4 w-4" /> : <PlugZap className="h-4 w-4" />}
+                        {aiTestResult.ok
+                          ? `Connection succeeded · ${aiTestResult.model} · ${aiTestResult.latencyMs}ms`
+                          : `Connection failed: ${aiTestResult.error ?? "unknown error"}`}
+                      </div>
+                    )}
+
+                    <div className="flex flex-wrap items-center gap-2 border-t border-border pt-4">
+                      <Button onClick={saveAiSettings} disabled={aiSaving}>
+                        <Save className="h-4 w-4" /> {aiSaving ? "Saving..." : "Save Configuration"}
+                      </Button>
+                      <Button variant="outline" onClick={testAiConnection} disabled={aiTesting}>
+                        <PlugZap className="h-4 w-4" /> {aiTesting ? "Testing..." : "Test Connection"}
+                      </Button>
+                      {Boolean(ai.hasApiKey) && ai.credentialSource === "database" && (
+                        <Button variant="outline" onClick={removeAiKey} className="text-destructive">
+                          <Trash2 className="h-4 w-4" /> Remove API Key
+                        </Button>
+                      )}
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
           )}

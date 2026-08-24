@@ -308,6 +308,7 @@ export type UserWhereInput = {
   interviews?: Prisma.InterviewListRelationFilter
   announcements?: Prisma.AnnouncementListRelationFilter
   auditLogs?: Prisma.AuditLogListRelationFilter
+  aiConversations?: Prisma.AiConversationListRelationFilter
 }
 
 export type UserOrderByWithRelationInput = {
@@ -331,6 +332,7 @@ export type UserOrderByWithRelationInput = {
   interviews?: Prisma.InterviewOrderByRelationAggregateInput
   announcements?: Prisma.AnnouncementOrderByRelationAggregateInput
   auditLogs?: Prisma.AuditLogOrderByRelationAggregateInput
+  aiConversations?: Prisma.AiConversationOrderByRelationAggregateInput
 }
 
 export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -357,6 +359,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   interviews?: Prisma.InterviewListRelationFilter
   announcements?: Prisma.AnnouncementListRelationFilter
   auditLogs?: Prisma.AuditLogListRelationFilter
+  aiConversations?: Prisma.AiConversationListRelationFilter
 }, "id" | "email">
 
 export type UserOrderByWithAggregationInput = {
@@ -426,6 +429,7 @@ export type UserCreateInput = {
   interviews?: Prisma.InterviewCreateNestedManyWithoutInterviewerInput
   announcements?: Prisma.AnnouncementCreateNestedManyWithoutAuthorInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutActorInput
+  aiConversations?: Prisma.AiConversationCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateInput = {
@@ -449,6 +453,7 @@ export type UserUncheckedCreateInput = {
   interviews?: Prisma.InterviewUncheckedCreateNestedManyWithoutInterviewerInput
   announcements?: Prisma.AnnouncementUncheckedCreateNestedManyWithoutAuthorInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutActorInput
+  aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserUpdateInput = {
@@ -472,6 +477,7 @@ export type UserUpdateInput = {
   interviews?: Prisma.InterviewUpdateManyWithoutInterviewerNestedInput
   announcements?: Prisma.AnnouncementUpdateManyWithoutAuthorNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutActorNestedInput
+  aiConversations?: Prisma.AiConversationUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateInput = {
@@ -495,6 +501,7 @@ export type UserUncheckedUpdateInput = {
   interviews?: Prisma.InterviewUncheckedUpdateManyWithoutInterviewerNestedInput
   announcements?: Prisma.AnnouncementUncheckedUpdateManyWithoutAuthorNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutActorNestedInput
+  aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateManyInput = {
@@ -721,6 +728,20 @@ export type UserUpdateOneWithoutAuditLogsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutAuditLogsInput, Prisma.UserUpdateWithoutAuditLogsInput>, Prisma.UserUncheckedUpdateWithoutAuditLogsInput>
 }
 
+export type UserCreateNestedOneWithoutAiConversationsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutAiConversationsInput, Prisma.UserUncheckedCreateWithoutAiConversationsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutAiConversationsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutAiConversationsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutAiConversationsInput, Prisma.UserUncheckedCreateWithoutAiConversationsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutAiConversationsInput
+  upsert?: Prisma.UserUpsertWithoutAiConversationsInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutAiConversationsInput, Prisma.UserUpdateWithoutAiConversationsInput>, Prisma.UserUncheckedUpdateWithoutAiConversationsInput>
+}
+
 export type UserCreateWithoutEmployeeInput = {
   id?: string
   email: string
@@ -741,6 +762,7 @@ export type UserCreateWithoutEmployeeInput = {
   interviews?: Prisma.InterviewCreateNestedManyWithoutInterviewerInput
   announcements?: Prisma.AnnouncementCreateNestedManyWithoutAuthorInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutActorInput
+  aiConversations?: Prisma.AiConversationCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutEmployeeInput = {
@@ -763,6 +785,7 @@ export type UserUncheckedCreateWithoutEmployeeInput = {
   interviews?: Prisma.InterviewUncheckedCreateNestedManyWithoutInterviewerInput
   announcements?: Prisma.AnnouncementUncheckedCreateNestedManyWithoutAuthorInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutActorInput
+  aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutEmployeeInput = {
@@ -801,6 +824,7 @@ export type UserUpdateWithoutEmployeeInput = {
   interviews?: Prisma.InterviewUpdateManyWithoutInterviewerNestedInput
   announcements?: Prisma.AnnouncementUpdateManyWithoutAuthorNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutActorNestedInput
+  aiConversations?: Prisma.AiConversationUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutEmployeeInput = {
@@ -823,6 +847,7 @@ export type UserUncheckedUpdateWithoutEmployeeInput = {
   interviews?: Prisma.InterviewUncheckedUpdateManyWithoutInterviewerNestedInput
   announcements?: Prisma.AnnouncementUncheckedUpdateManyWithoutAuthorNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutActorNestedInput
+  aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutInterviewsInput = {
@@ -845,6 +870,7 @@ export type UserCreateWithoutInterviewsInput = {
   employee?: Prisma.EmployeeCreateNestedOneWithoutUserInput
   announcements?: Prisma.AnnouncementCreateNestedManyWithoutAuthorInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutActorInput
+  aiConversations?: Prisma.AiConversationCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutInterviewsInput = {
@@ -867,6 +893,7 @@ export type UserUncheckedCreateWithoutInterviewsInput = {
   employee?: Prisma.EmployeeUncheckedCreateNestedOneWithoutUserInput
   announcements?: Prisma.AnnouncementUncheckedCreateNestedManyWithoutAuthorInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutActorInput
+  aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutInterviewsInput = {
@@ -905,6 +932,7 @@ export type UserUpdateWithoutInterviewsInput = {
   employee?: Prisma.EmployeeUpdateOneWithoutUserNestedInput
   announcements?: Prisma.AnnouncementUpdateManyWithoutAuthorNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutActorNestedInput
+  aiConversations?: Prisma.AiConversationUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutInterviewsInput = {
@@ -927,6 +955,7 @@ export type UserUncheckedUpdateWithoutInterviewsInput = {
   employee?: Prisma.EmployeeUncheckedUpdateOneWithoutUserNestedInput
   announcements?: Prisma.AnnouncementUncheckedUpdateManyWithoutAuthorNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutActorNestedInput
+  aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutAnnouncementsInput = {
@@ -949,6 +978,7 @@ export type UserCreateWithoutAnnouncementsInput = {
   employee?: Prisma.EmployeeCreateNestedOneWithoutUserInput
   interviews?: Prisma.InterviewCreateNestedManyWithoutInterviewerInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutActorInput
+  aiConversations?: Prisma.AiConversationCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutAnnouncementsInput = {
@@ -971,6 +1001,7 @@ export type UserUncheckedCreateWithoutAnnouncementsInput = {
   employee?: Prisma.EmployeeUncheckedCreateNestedOneWithoutUserInput
   interviews?: Prisma.InterviewUncheckedCreateNestedManyWithoutInterviewerInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutActorInput
+  aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutAnnouncementsInput = {
@@ -1009,6 +1040,7 @@ export type UserUpdateWithoutAnnouncementsInput = {
   employee?: Prisma.EmployeeUpdateOneWithoutUserNestedInput
   interviews?: Prisma.InterviewUpdateManyWithoutInterviewerNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutActorNestedInput
+  aiConversations?: Prisma.AiConversationUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutAnnouncementsInput = {
@@ -1031,6 +1063,7 @@ export type UserUncheckedUpdateWithoutAnnouncementsInput = {
   employee?: Prisma.EmployeeUncheckedUpdateOneWithoutUserNestedInput
   interviews?: Prisma.InterviewUncheckedUpdateManyWithoutInterviewerNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutActorNestedInput
+  aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutAuditLogsInput = {
@@ -1053,6 +1086,7 @@ export type UserCreateWithoutAuditLogsInput = {
   employee?: Prisma.EmployeeCreateNestedOneWithoutUserInput
   interviews?: Prisma.InterviewCreateNestedManyWithoutInterviewerInput
   announcements?: Prisma.AnnouncementCreateNestedManyWithoutAuthorInput
+  aiConversations?: Prisma.AiConversationCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutAuditLogsInput = {
@@ -1075,6 +1109,7 @@ export type UserUncheckedCreateWithoutAuditLogsInput = {
   employee?: Prisma.EmployeeUncheckedCreateNestedOneWithoutUserInput
   interviews?: Prisma.InterviewUncheckedCreateNestedManyWithoutInterviewerInput
   announcements?: Prisma.AnnouncementUncheckedCreateNestedManyWithoutAuthorInput
+  aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutAuditLogsInput = {
@@ -1113,6 +1148,7 @@ export type UserUpdateWithoutAuditLogsInput = {
   employee?: Prisma.EmployeeUpdateOneWithoutUserNestedInput
   interviews?: Prisma.InterviewUpdateManyWithoutInterviewerNestedInput
   announcements?: Prisma.AnnouncementUpdateManyWithoutAuthorNestedInput
+  aiConversations?: Prisma.AiConversationUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutAuditLogsInput = {
@@ -1135,6 +1171,115 @@ export type UserUncheckedUpdateWithoutAuditLogsInput = {
   employee?: Prisma.EmployeeUncheckedUpdateOneWithoutUserNestedInput
   interviews?: Prisma.InterviewUncheckedUpdateManyWithoutInterviewerNestedInput
   announcements?: Prisma.AnnouncementUncheckedUpdateManyWithoutAuthorNestedInput
+  aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutUserNestedInput
+}
+
+export type UserCreateWithoutAiConversationsInput = {
+  id?: string
+  email: string
+  password: string
+  firstName: string
+  lastName: string
+  role?: $Enums.Role
+  avatarUrl?: string | null
+  isActive?: boolean
+  refreshToken?: string | null
+  passwordResetOtp?: string | null
+  passwordResetOtpExpires?: Date | string | null
+  failedLoginAttempts?: number
+  lockoutUntil?: Date | string | null
+  passwordChangedAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  employee?: Prisma.EmployeeCreateNestedOneWithoutUserInput
+  interviews?: Prisma.InterviewCreateNestedManyWithoutInterviewerInput
+  announcements?: Prisma.AnnouncementCreateNestedManyWithoutAuthorInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutActorInput
+}
+
+export type UserUncheckedCreateWithoutAiConversationsInput = {
+  id?: string
+  email: string
+  password: string
+  firstName: string
+  lastName: string
+  role?: $Enums.Role
+  avatarUrl?: string | null
+  isActive?: boolean
+  refreshToken?: string | null
+  passwordResetOtp?: string | null
+  passwordResetOtpExpires?: Date | string | null
+  failedLoginAttempts?: number
+  lockoutUntil?: Date | string | null
+  passwordChangedAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  employee?: Prisma.EmployeeUncheckedCreateNestedOneWithoutUserInput
+  interviews?: Prisma.InterviewUncheckedCreateNestedManyWithoutInterviewerInput
+  announcements?: Prisma.AnnouncementUncheckedCreateNestedManyWithoutAuthorInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutActorInput
+}
+
+export type UserCreateOrConnectWithoutAiConversationsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutAiConversationsInput, Prisma.UserUncheckedCreateWithoutAiConversationsInput>
+}
+
+export type UserUpsertWithoutAiConversationsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutAiConversationsInput, Prisma.UserUncheckedUpdateWithoutAiConversationsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutAiConversationsInput, Prisma.UserUncheckedCreateWithoutAiConversationsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutAiConversationsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutAiConversationsInput, Prisma.UserUncheckedUpdateWithoutAiConversationsInput>
+}
+
+export type UserUpdateWithoutAiConversationsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  password?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  refreshToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordResetOtp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordResetOtpExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  failedLoginAttempts?: Prisma.IntFieldUpdateOperationsInput | number
+  lockoutUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  employee?: Prisma.EmployeeUpdateOneWithoutUserNestedInput
+  interviews?: Prisma.InterviewUpdateManyWithoutInterviewerNestedInput
+  announcements?: Prisma.AnnouncementUpdateManyWithoutAuthorNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutActorNestedInput
+}
+
+export type UserUncheckedUpdateWithoutAiConversationsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  password?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  refreshToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordResetOtp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordResetOtpExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  failedLoginAttempts?: Prisma.IntFieldUpdateOperationsInput | number
+  lockoutUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  employee?: Prisma.EmployeeUncheckedUpdateOneWithoutUserNestedInput
+  interviews?: Prisma.InterviewUncheckedUpdateManyWithoutInterviewerNestedInput
+  announcements?: Prisma.AnnouncementUncheckedUpdateManyWithoutAuthorNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutActorNestedInput
 }
 
 
@@ -1146,12 +1291,14 @@ export type UserCountOutputType = {
   interviews: number
   announcements: number
   auditLogs: number
+  aiConversations: number
 }
 
 export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   interviews?: boolean | UserCountOutputTypeCountInterviewsArgs
   announcements?: boolean | UserCountOutputTypeCountAnnouncementsArgs
   auditLogs?: boolean | UserCountOutputTypeCountAuditLogsArgs
+  aiConversations?: boolean | UserCountOutputTypeCountAiConversationsArgs
 }
 
 /**
@@ -1185,6 +1332,13 @@ export type UserCountOutputTypeCountAuditLogsArgs<ExtArgs extends runtime.Types.
   where?: Prisma.AuditLogWhereInput
 }
 
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountAiConversationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.AiConversationWhereInput
+}
+
 
 export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -1207,6 +1361,7 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   interviews?: boolean | Prisma.User$interviewsArgs<ExtArgs>
   announcements?: boolean | Prisma.User$announcementsArgs<ExtArgs>
   auditLogs?: boolean | Prisma.User$auditLogsArgs<ExtArgs>
+  aiConversations?: boolean | Prisma.User$aiConversationsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
 
@@ -1273,6 +1428,7 @@ export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   interviews?: boolean | Prisma.User$interviewsArgs<ExtArgs>
   announcements?: boolean | Prisma.User$announcementsArgs<ExtArgs>
   auditLogs?: boolean | Prisma.User$auditLogsArgs<ExtArgs>
+  aiConversations?: boolean | Prisma.User$aiConversationsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type UserIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -1285,6 +1441,7 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     interviews: Prisma.$InterviewPayload<ExtArgs>[]
     announcements: Prisma.$AnnouncementPayload<ExtArgs>[]
     auditLogs: Prisma.$AuditLogPayload<ExtArgs>[]
+    aiConversations: Prisma.$AiConversationPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1701,6 +1858,7 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
   interviews<T extends Prisma.User$interviewsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$interviewsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$InterviewPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   announcements<T extends Prisma.User$announcementsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$announcementsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AnnouncementPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   auditLogs<T extends Prisma.User$auditLogsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$auditLogsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AuditLogPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  aiConversations<T extends Prisma.User$aiConversationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$aiConversationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AiConversationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2227,6 +2385,30 @@ export type User$auditLogsArgs<ExtArgs extends runtime.Types.Extensions.Internal
   take?: number
   skip?: number
   distinct?: Prisma.AuditLogScalarFieldEnum | Prisma.AuditLogScalarFieldEnum[]
+}
+
+/**
+ * User.aiConversations
+ */
+export type User$aiConversationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the AiConversation
+   */
+  select?: Prisma.AiConversationSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the AiConversation
+   */
+  omit?: Prisma.AiConversationOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.AiConversationInclude<ExtArgs> | null
+  where?: Prisma.AiConversationWhereInput
+  orderBy?: Prisma.AiConversationOrderByWithRelationInput | Prisma.AiConversationOrderByWithRelationInput[]
+  cursor?: Prisma.AiConversationWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.AiConversationScalarFieldEnum | Prisma.AiConversationScalarFieldEnum[]
 }
 
 /**

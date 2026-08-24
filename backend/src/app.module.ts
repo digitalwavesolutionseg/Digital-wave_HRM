@@ -20,6 +20,7 @@ import { ReportsModule } from "./modules/reports/reports.module";
 import { SettingsModule } from "./modules/settings/settings.module";
 import { AuditModule } from "./modules/audit/audit.module";
 import { HealthController } from "./health.controller";
+import { AiModule } from "./modules/ai/ai.module";
 
 @Module({
   controllers: [HealthController],
@@ -54,6 +55,7 @@ import { HealthController } from "./health.controller";
     ReportsModule,
     SettingsModule,
     AuditModule,
+    AiModule,
   ],
   providers: [
     {

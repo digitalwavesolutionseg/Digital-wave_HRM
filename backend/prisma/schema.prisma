@@ -148,6 +148,7 @@ model User {
   interviews              Interview[]
   announcements           Announcement[]
   auditLogs               AuditLog[]
+  aiConversations         AiConversation[]
   createdAt               DateTime      @default(now())
   updatedAt               DateTime      @updatedAt
 }
@@ -428,4 +429,50 @@ model AuditLog {
   @@index([actorId])
   @@index([entity])
   @@index([createdAt])
+}
+
+model AiConversation {
+  id        String      @id @default(cuid())
+  userId    String
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String      @default("New conversation")
+  messages  AiMessage[]
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@index([userId, updatedAt])
+}
+
+model AiMessage {
+  id             String         @id @default(cuid())
+  conversationId String
+  conversation   AiConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role           String
+  content        String
+  toolName       String?
+  toolArgs       Json?
+  toolResult     Json?
+  status         String?
+  tokenUsage     Int?
+  createdAt      DateTime       @default(now())
+
+  @@index([conversationId, createdAt])
+}
+
+model AiSetting {
+  id                       String   @id @default(cuid())
+  enabled                  Boolean  @default(false)
+  provider                 String   @default("openai-compatible")
+  baseUrl                  String?
+  apiKeyEncrypted          String?
+  apiKeyLast4              String?
+  model                    String   @default("openai/gpt-4o-mini")
+  temperature              Float    @default(0.2)
+  maxOutputTokens          Int      @default(1024)
+  requestTimeoutMs         Int      @default(60000)
+  monthlyTokenLimit        Int      @default(1000000)
+  perUserMonthlyTokenLimit Int      @default(100000)
+  allowedRoles             String   @default("SUPER_ADMIN,HR,MANAGER,FINANCE,RECRUITER,EMPLOYEE")
+  writeActionsEnabled      Boolean  @default(false)
+  updatedAt                DateTime @updatedAt
 }

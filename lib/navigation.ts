@@ -13,6 +13,7 @@ import {
   Megaphone,
   BarChart3,
   Settings,
+  Sparkles,
   type LucideIcon,
 } from "lucide-react";
 
@@ -65,6 +66,7 @@ export const navSections: NavSection[] = [
       { title: "Assets", href: "/assets", icon: Package },
       { title: "Announcements", href: "/announcements", icon: Megaphone },
       { title: "Reports", href: "/reports", icon: BarChart3 },
+      { title: "AI Assistant", href: "/assistant", icon: Sparkles },
     ],
   },
 ];

@@ -69,7 +69,10 @@ export const ModelName = {
   Asset: 'Asset',
   Announcement: 'Announcement',
   CompanySetting: 'CompanySetting',
-  AuditLog: 'AuditLog'
+  AuditLog: 'AuditLog',
+  AiConversation: 'AiConversation',
+  AiMessage: 'AiMessage',
+  AiSetting: 'AiSetting'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -388,6 +391,54 @@ export const AuditLogScalarFieldEnum = {
 } as const
 
 export type AuditLogScalarFieldEnum = (typeof AuditLogScalarFieldEnum)[keyof typeof AuditLogScalarFieldEnum]
+
+
+export const AiConversationScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  title: 'title',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type AiConversationScalarFieldEnum = (typeof AiConversationScalarFieldEnum)[keyof typeof AiConversationScalarFieldEnum]
+
+
+export const AiMessageScalarFieldEnum = {
+  id: 'id',
+  conversationId: 'conversationId',
+  role: 'role',
+  content: 'content',
+  toolName: 'toolName',
+  toolArgs: 'toolArgs',
+  toolResult: 'toolResult',
+  status: 'status',
+  tokenUsage: 'tokenUsage',
+  createdAt: 'createdAt'
+} as const
+
+export type AiMessageScalarFieldEnum = (typeof AiMessageScalarFieldEnum)[keyof typeof AiMessageScalarFieldEnum]
+
+
+export const AiSettingScalarFieldEnum = {
+  id: 'id',
+  enabled: 'enabled',
+  provider: 'provider',
+  baseUrl: 'baseUrl',
+  apiKeyEncrypted: 'apiKeyEncrypted',
+  apiKeyLast4: 'apiKeyLast4',
+  model: 'model',
+  temperature: 'temperature',
+  maxOutputTokens: 'maxOutputTokens',
+  requestTimeoutMs: 'requestTimeoutMs',
+  monthlyTokenLimit: 'monthlyTokenLimit',
+  perUserMonthlyTokenLimit: 'perUserMonthlyTokenLimit',
+  allowedRoles: 'allowedRoles',
+  writeActionsEnabled: 'writeActionsEnabled',
+  updatedAt: 'updatedAt'
+} as const
+
+export type AiSettingScalarFieldEnum = (typeof AiSettingScalarFieldEnum)[keyof typeof AiSettingScalarFieldEnum]
 
 
 export const SortOrder = {

@@ -112,3 +112,18 @@ export type CompanySetting = Prisma.CompanySettingModel
  * 
  */
 export type AuditLog = Prisma.AuditLogModel
+/**
+ * Model AiConversation
+ * 
+ */
+export type AiConversation = Prisma.AiConversationModel
+/**
+ * Model AiMessage
+ * 
+ */
+export type AiMessage = Prisma.AiMessageModel
+/**
+ * Model AiSetting
+ * 
+ */
+export type AiSetting = Prisma.AiSettingModel
