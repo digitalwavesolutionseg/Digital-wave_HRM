@@ -51,3 +51,6 @@ next-env.d.ts
 .vercel
 .env*
 backend-dev.log
+backend/scripts/*.js
+backend/scripts/*.js.map
+backend/backend/
