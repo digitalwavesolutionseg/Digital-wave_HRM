@@ -38,6 +38,8 @@ async function bootstrap() {
   const port = process.env.PORT ?? 3001;
   await app.listen(port);
   Logger.log(`🚀 HRM API running on http://localhost:${port}`, "Bootstrap");
-  Logger.log(`📚 Swagger docs on http://localhost:${port}/api-docs`, "Bootstrap");
+  if (process.env.NODE_ENV !== "production") {
+    Logger.log(`📚 Swagger docs on http://localhost:${port}/api-docs`, "Bootstrap");
+  }
 }
 bootstrap();
