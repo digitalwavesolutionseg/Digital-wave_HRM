@@ -18,8 +18,7 @@ export default function RegisterPage() {
 }
 
 function RegisterForm() {
-  const { login } = useAuth();
-  const router = useRouter();
+  const { verifySignup } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [firstName, setFirstName] = useState("");
@@ -29,14 +28,18 @@ function RegisterForm() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [role, setRole] = useState("Employee");
   const [error, setError] = useState("");
+  const [info, setInfo] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [stage, setStage] = useState<"form" | "verify">("form");
+  const [otp, setOtp] = useState("");
+  const [devOtp, setDevOtp] = useState("");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     void role;
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters.");
+    if (password.length < 10) {
+      setError("Password must be at least 10 characters.");
       return;
     }
     if (password !== confirmPassword) {
@@ -53,16 +56,53 @@ function RegisterForm() {
           body: JSON.stringify({ email: workEmail, password, firstName, lastName }),
         }
       );
+      const data = await res.json().catch(() => null);
       if (!res.ok) {
-        const data = await res.json().catch(() => null);
         throw new Error(
           typeof data?.message === "string" ? data.message : "Registration failed."
         );
       }
-      await login(workEmail, password);
-      router.push("/");
+      if (data?.devOtp) setDevOtp(data.devOtp);
+      setStage("verify");
+      setInfo(`We sent a 6-digit code to ${workEmail}. Enter it below to verify your account.`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Registration failed.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleVerify(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    setSubmitting(true);
+    try {
+      await verifySignup(workEmail, otp);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Verification failed.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleResend() {
+    setError("");
+    setInfo("");
+    setSubmitting(true);
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/api"}/auth/resend-verification`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: workEmail }),
+        }
+      );
+      const data = await res.json().catch(() => null);
+      if (data?.devOtp) setDevOtp(data.devOtp);
+      setInfo("A new code has been sent.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not resend the code.");
     } finally {
       setSubmitting(false);
     }
@@ -73,19 +113,68 @@ function RegisterForm() {
       <Card className="w-full max-w-md animate-fade-up">
         <CardContent className="flex flex-col gap-8 p-8 sm:p-10">
           <div className="flex flex-col items-center gap-5 text-center">
-            <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-primary text-xl font-bold tracking-tight text-primary-foreground shadow-[0_6px_20px_rgba(11,95,255,0.25)]">
-              DW
+            <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-xl bg-white shadow-[0_6px_20px_rgba(11,95,255,0.25)]">
+              <img src="/logo.png" alt="Digital Wave" className="h-12 w-12 object-contain" />
             </div>
             <div className="flex flex-col gap-1.5">
               <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-                Create account
+                {stage === "form" ? "Create account" : "Verify your email"}
               </h1>
               <p className="text-sm text-muted-foreground">
-                Start your journey with Digital Wave HRM in minutes.
+                {stage === "form"
+                  ? "Start your journey with Digital Wave HRM in minutes."
+                  : "Enter the 6-digit code we emailed you."}
               </p>
             </div>
           </div>
 
+          {stage === "verify" ? (
+            <form className="flex flex-col gap-5" onSubmit={handleVerify}>
+              {info ? <p className="text-center text-sm text-muted-foreground">{info}</p> : null}
+              {devOtp ? (
+                <p className="rounded-lg bg-warning/10 px-3 py-2 text-center text-xs text-warning">
+                  Dev mode — code: <strong>{devOtp}</strong>
+                </p>
+              ) : null}
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="otp">Verification code</Label>
+                <Input
+                  id="otp"
+                  inputMode="numeric"
+                  maxLength={6}
+                  placeholder="000000"
+                  className="text-center text-lg tracking-[0.5em]"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+                />
+              </div>
+              {error ? (
+                <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                  {error}
+                </p>
+              ) : null}
+              <Button type="submit" className="w-full" size="lg" disabled={submitting || otp.length !== 6}>
+                {submitting ? "Verifying…" : "Verify and continue"}
+              </Button>
+              <div className="flex items-center justify-between text-xs">
+                <button
+                  type="button"
+                  onClick={handleResend}
+                  disabled={submitting}
+                  className="font-medium text-primary hover:underline"
+                >
+                  Resend code
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setStage("form"); setError(""); setInfo(""); }}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  Edit details
+                </button>
+              </div>
+            </form>
+          ) : (
           <form className="flex flex-col gap-5" onSubmit={handleSubmit}>
             <div className="flex flex-col gap-2">
               <Label htmlFor="firstName">First Name</Label>
@@ -201,6 +290,7 @@ function RegisterForm() {
               {submitting ? "Creating account…" : "Create account"}
             </Button>
           </form>
+          )}
 
           <p className="text-center text-sm text-muted-foreground">
             Already have an account?{" "}

@@ -9,7 +9,19 @@ import {
 import { Throttle } from "@nestjs/throttler";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { AuthService } from "./auth.service";
-import { ChangePasswordDto, ForgotPasswordDto, LoginDto, RefreshTokenDto, RegisterDto, ResetPasswordDto } from "./dto/auth.dto";
+import {
+  AcceptInviteDto,
+  ChangePasswordDto,
+  ForgotPasswordDto,
+  LoginDto,
+  RefreshTokenDto,
+  RegisterDto,
+  RequestLoginOtpDto,
+  ResendVerificationDto,
+  ResetPasswordDto,
+  VerifyEmailDto,
+  VerifyLoginOtpDto,
+} from "./dto/auth.dto";
 import { JwtAuthGuard } from "./jwt-auth.guard";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
 
@@ -51,6 +63,41 @@ export class AuthController {
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   resetPassword(@Body() dto: ResetPasswordDto) {
     return this.authService.resetPassword(dto);
+  }
+
+  @Post("request-login-otp")
+  @HttpCode(200)
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  requestLoginOtp(@Body() dto: RequestLoginOtpDto) {
+    return this.authService.requestLoginOtp(dto);
+  }
+
+  @Post("verify-login-otp")
+  @HttpCode(200)
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  verifyLoginOtp(@Body() dto: VerifyLoginOtpDto) {
+    return this.authService.verifyLoginOtp(dto);
+  }
+
+  @Post("verify-email")
+  @HttpCode(200)
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  verifyEmail(@Body() dto: VerifyEmailDto) {
+    return this.authService.verifyEmail(dto);
+  }
+
+  @Post("resend-verification")
+  @HttpCode(200)
+  @Throttle({ default: { limit: 3, ttl: 60_000 } })
+  resendVerification(@Body() dto: ResendVerificationDto) {
+    return this.authService.resendVerification(dto);
+  }
+
+  @Post("accept-invite")
+  @HttpCode(200)
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  acceptInvite(@Body() dto: AcceptInviteDto) {
+    return this.authService.acceptInvite(dto);
   }
 
   @Post("change-password")

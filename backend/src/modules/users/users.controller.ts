@@ -11,10 +11,12 @@ import {
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { UsersService } from "./users.service";
 import { UpdateUserDto } from "./dto/update-user.dto";
+import { InviteUserDto } from "./dto/invite-user.dto";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 import { RolesGuard } from "../../common/guards/roles.guard";
 import { Roles, Role } from "../../common/decorators/roles.decorator";
+import { Throttle } from "@nestjs/throttler";
 
 @ApiTags("users")
 @ApiBearerAuth()
@@ -33,6 +35,13 @@ export class UsersController {
   @Roles(Role.SUPER_ADMIN, Role.HR, Role.MANAGER, Role.FINANCE, Role.RECRUITER)
   findOne(@Param("id") id: string) {
     return this.usersService.findOne(id);
+  }
+
+  @Post("invite")
+  @Roles(Role.SUPER_ADMIN, Role.HR)
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  invite(@CurrentUser() actor: any, @Body() dto: InviteUserDto) {
+    return this.usersService.invite(actor, dto);
   }
 
   @Put(":id")

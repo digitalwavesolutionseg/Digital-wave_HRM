@@ -144,6 +144,11 @@ model User {
   failedLoginAttempts     Int           @default(0)
   lockoutUntil            DateTime?
   passwordChangedAt       DateTime?
+  emailVerifiedAt         DateTime?
+  loginOtpHash            String?
+  loginOtpExpires         DateTime?
+  inviteTokenHash         String?
+  inviteExpires           DateTime?
   employee                Employee?
   interviews              Interview[]
   announcements           Announcement[]

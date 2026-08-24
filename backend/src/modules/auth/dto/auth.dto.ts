@@ -60,3 +60,41 @@ export class ChangePasswordDto {
   @IsStrongPassword()
   newPassword: string;
 }
+
+export class RequestLoginOtpDto {
+  @IsEmail()
+  email: string;
+}
+
+export class VerifyLoginOtpDto {
+  @IsEmail()
+  email: string;
+
+  @IsString()
+  @IsNotEmpty()
+  otp: string;
+}
+
+export class VerifyEmailDto {
+  @IsEmail()
+  email: string;
+
+  @IsString()
+  @IsNotEmpty()
+  otp: string;
+}
+
+export class ResendVerificationDto {
+  @IsEmail()
+  email: string;
+}
+
+export class AcceptInviteDto {
+  @IsString()
+  @IsNotEmpty()
+  token: string;
+
+  @IsString()
+  @IsStrongPassword()
+  password: string;
+}

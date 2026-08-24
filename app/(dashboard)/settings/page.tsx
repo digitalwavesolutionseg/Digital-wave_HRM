@@ -15,6 +15,7 @@ import {
   Sparkles,
   PlugZap,
   Trash2,
+  UserPlus,
 } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/ui/page-header";
@@ -23,6 +24,14 @@ import { Badge } from "@/components/ui/badge";
 import { Input, Textarea, Label } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { DataTable } from "@/components/ui/data-table";
@@ -156,6 +165,10 @@ export default function SettingsPage() {
   const [aiSaving, setAiSaving] = React.useState(false);
   const [aiTesting, setAiTesting] = React.useState(false);
   const [aiTestResult, setAiTestResult] = React.useState<{ ok: boolean; model: string; latencyMs: number; error?: string } | null>(null);
+  const [users, setUsers] = React.useState<{ id: string; email: string; firstName: string; lastName: string; role: string; isActive: boolean; emailVerifiedAt?: string | null }[]>([]);
+  const [inviteOpen, setInviteOpen] = React.useState(false);
+  const [inviteForm, setInviteForm] = React.useState({ email: "", firstName: "", lastName: "", role: "EMPLOYEE" });
+  const [inviting, setInviting] = React.useState(false);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -164,10 +177,11 @@ export default function SettingsPage() {
         const { api } = await import("@/lib/api");
         const [settingsRes, usersRes] = await Promise.all([
           api.get<Record<string, any>>("/settings"),
-          api.get<{ id: string; role: string }[]>("/users"),
+          api.get<{ id: string; role: string; email: string; firstName: string; lastName: string; isActive: boolean; emailVerifiedAt?: string | null }[]>("/users"),
         ]);
         if (cancelled) return;
         setSettings(settingsRes);
+        setUsers(usersRes);
 
         const counts = new Map<string, number>();
         for (const u of usersRes) {
@@ -318,6 +332,31 @@ export default function SettingsPage() {
       toast.success("API key removed");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to remove key");
+    }
+  };
+
+  const submitInvite = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setInviting(true);
+    try {
+      const { api } = await import("@/lib/api");
+      const res = await api.post<{ emailed: boolean; devInviteLink?: string }>("/users/invite", inviteForm);
+      if (res.devInviteLink) {
+        toast.info("Email unavailable in dev — invite link copied to console");
+        console.log("Invite link:", res.devInviteLink);
+      } else if (res.emailed) {
+        toast.success(`Invitation sent to ${inviteForm.email}`);
+      } else {
+        toast.warning("User created but the email could not be sent. Check the Resend configuration.");
+      }
+      setInviteOpen(false);
+      setInviteForm({ email: "", firstName: "", lastName: "", role: "EMPLOYEE" });
+      const { api: api2 } = await import("@/lib/api");
+      setUsers(await api2.get<typeof users>("/users"));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Invite failed");
+    } finally {
+      setInviting(false);
     }
   };
 
@@ -643,12 +682,12 @@ export default function SettingsPage() {
           {active === "permissions" && (
             <Card>
               <CardHeader>
-                <CardTitle>Roles & Permissions</CardTitle>
+                <CardTitle>Roles &amp; Permissions</CardTitle>
                 <CardDescription>
                   Live count of members per role and their module access.
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-6">
                 <DataTable
                   columns={roleColumns}
                   data={roles}
@@ -656,9 +695,51 @@ export default function SettingsPage() {
                   toolbar={
                     <div className="flex items-center justify-between">
                       <p className="text-sm text-muted-foreground">{roles.length} roles · {roles.reduce((a, r) => a + r.members, 0)} users</p>
+                      <Button size="sm" onClick={() => setInviteOpen(true)}>
+                        <UserPlus className="h-4 w-4" /> Invite User
+                      </Button>
                     </div>
                   }
                 />
+
+                <div>
+                  <p className="mb-2 text-sm font-medium">Users</p>
+                  <div className="overflow-hidden rounded-[14px] border border-border">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-border bg-muted/50 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                          <th className="px-4 py-2.5">Name</th>
+                          <th className="px-4 py-2.5">Email</th>
+                          <th className="px-4 py-2.5">Role</th>
+                          <th className="px-4 py-2.5">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {users.map((u) => (
+                          <tr key={u.id} className="border-b border-border last:border-0">
+                            <td className="px-4 py-2.5 font-medium">{u.firstName} {u.lastName}</td>
+                            <td className="px-4 py-2.5 text-muted-foreground">{u.email}</td>
+                            <td className="px-4 py-2.5">{u.role.replaceAll("_", " ")}</td>
+                            <td className="px-4 py-2.5">
+                              {u.emailVerifiedAt ? (
+                                <Badge variant="success">Active</Badge>
+                              ) : (
+                                <Badge variant="warning">Invitation pending</Badge>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                        {!users.length && (
+                          <tr>
+                            <td colSpan={4} className="px-4 py-6 text-center text-muted-foreground">
+                              No users found.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           )}
@@ -854,6 +935,62 @@ export default function SettingsPage() {
           )}
         </div>
       </div>
+
+      <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Invite User</DialogTitle>
+            <DialogDescription>
+              An invitation email with an activation link will be sent. The link expires in 7 days.
+            </DialogDescription>
+          </DialogHeader>
+          <form className="grid gap-4" onSubmit={submitInvite}>
+            <FormField label="First Name">
+              <Input
+                value={inviteForm.firstName}
+                onChange={(e) => setInviteForm((f) => ({ ...f, firstName: e.target.value }))}
+                required
+              />
+            </FormField>
+            <FormField label="Last Name">
+              <Input
+                value={inviteForm.lastName}
+                onChange={(e) => setInviteForm((f) => ({ ...f, lastName: e.target.value }))}
+                required
+              />
+            </FormField>
+            <FormField label="Work Email">
+              <Input
+                type="email"
+                value={inviteForm.email}
+                onChange={(e) => setInviteForm((f) => ({ ...f, email: e.target.value }))}
+                required
+              />
+            </FormField>
+            <FormField label="Role">
+              <Select
+                value={inviteForm.role}
+                onChange={(e) => setInviteForm((f) => ({ ...f, role: e.target.value }))}
+              >
+                <option value="EMPLOYEE">Employee</option>
+                <option value="MANAGER">Manager</option>
+                <option value="RECRUITER">Recruiter</option>
+                <option value="FINANCE">Finance</option>
+                <option value="HR">HR Manager</option>
+                <option value="SUPER_ADMIN">Administrator</option>
+              </Select>
+            </FormField>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setInviteOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={inviting}>
+                <UserPlus className="h-4 w-4" /> {inviting ? "Sending..." : "Send invitation"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

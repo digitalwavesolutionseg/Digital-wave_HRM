@@ -49,6 +49,11 @@ export type UserMinAggregateOutputType = {
   failedLoginAttempts: number | null
   lockoutUntil: Date | null
   passwordChangedAt: Date | null
+  emailVerifiedAt: Date | null
+  loginOtpHash: string | null
+  loginOtpExpires: Date | null
+  inviteTokenHash: string | null
+  inviteExpires: Date | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -68,6 +73,11 @@ export type UserMaxAggregateOutputType = {
   failedLoginAttempts: number | null
   lockoutUntil: Date | null
   passwordChangedAt: Date | null
+  emailVerifiedAt: Date | null
+  loginOtpHash: string | null
+  loginOtpExpires: Date | null
+  inviteTokenHash: string | null
+  inviteExpires: Date | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -87,6 +97,11 @@ export type UserCountAggregateOutputType = {
   failedLoginAttempts: number
   lockoutUntil: number
   passwordChangedAt: number
+  emailVerifiedAt: number
+  loginOtpHash: number
+  loginOtpExpires: number
+  inviteTokenHash: number
+  inviteExpires: number
   createdAt: number
   updatedAt: number
   _all: number
@@ -116,6 +131,11 @@ export type UserMinAggregateInputType = {
   failedLoginAttempts?: true
   lockoutUntil?: true
   passwordChangedAt?: true
+  emailVerifiedAt?: true
+  loginOtpHash?: true
+  loginOtpExpires?: true
+  inviteTokenHash?: true
+  inviteExpires?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -135,6 +155,11 @@ export type UserMaxAggregateInputType = {
   failedLoginAttempts?: true
   lockoutUntil?: true
   passwordChangedAt?: true
+  emailVerifiedAt?: true
+  loginOtpHash?: true
+  loginOtpExpires?: true
+  inviteTokenHash?: true
+  inviteExpires?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -154,6 +179,11 @@ export type UserCountAggregateInputType = {
   failedLoginAttempts?: true
   lockoutUntil?: true
   passwordChangedAt?: true
+  emailVerifiedAt?: true
+  loginOtpHash?: true
+  loginOtpExpires?: true
+  inviteTokenHash?: true
+  inviteExpires?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -260,6 +290,11 @@ export type UserGroupByOutputType = {
   failedLoginAttempts: number
   lockoutUntil: Date | null
   passwordChangedAt: Date | null
+  emailVerifiedAt: Date | null
+  loginOtpHash: string | null
+  loginOtpExpires: Date | null
+  inviteTokenHash: string | null
+  inviteExpires: Date | null
   createdAt: Date
   updatedAt: Date
   _count: UserCountAggregateOutputType | null
@@ -302,6 +337,11 @@ export type UserWhereInput = {
   failedLoginAttempts?: Prisma.IntFilter<"User"> | number
   lockoutUntil?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
   passwordChangedAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
+  emailVerifiedAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
+  loginOtpHash?: Prisma.StringNullableFilter<"User"> | string | null
+  loginOtpExpires?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
+  inviteTokenHash?: Prisma.StringNullableFilter<"User"> | string | null
+  inviteExpires?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
   employee?: Prisma.XOR<Prisma.EmployeeNullableScalarRelationFilter, Prisma.EmployeeWhereInput> | null
@@ -326,6 +366,11 @@ export type UserOrderByWithRelationInput = {
   failedLoginAttempts?: Prisma.SortOrder
   lockoutUntil?: Prisma.SortOrderInput | Prisma.SortOrder
   passwordChangedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  emailVerifiedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  loginOtpHash?: Prisma.SortOrderInput | Prisma.SortOrder
+  loginOtpExpires?: Prisma.SortOrderInput | Prisma.SortOrder
+  inviteTokenHash?: Prisma.SortOrderInput | Prisma.SortOrder
+  inviteExpires?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   employee?: Prisma.EmployeeOrderByWithRelationInput
@@ -353,6 +398,11 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   failedLoginAttempts?: Prisma.IntFilter<"User"> | number
   lockoutUntil?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
   passwordChangedAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
+  emailVerifiedAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
+  loginOtpHash?: Prisma.StringNullableFilter<"User"> | string | null
+  loginOtpExpires?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
+  inviteTokenHash?: Prisma.StringNullableFilter<"User"> | string | null
+  inviteExpires?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
   employee?: Prisma.XOR<Prisma.EmployeeNullableScalarRelationFilter, Prisma.EmployeeWhereInput> | null
@@ -377,6 +427,11 @@ export type UserOrderByWithAggregationInput = {
   failedLoginAttempts?: Prisma.SortOrder
   lockoutUntil?: Prisma.SortOrderInput | Prisma.SortOrder
   passwordChangedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  emailVerifiedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  loginOtpHash?: Prisma.SortOrderInput | Prisma.SortOrder
+  loginOtpExpires?: Prisma.SortOrderInput | Prisma.SortOrder
+  inviteTokenHash?: Prisma.SortOrderInput | Prisma.SortOrder
+  inviteExpires?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.UserCountOrderByAggregateInput
@@ -404,6 +459,11 @@ export type UserScalarWhereWithAggregatesInput = {
   failedLoginAttempts?: Prisma.IntWithAggregatesFilter<"User"> | number
   lockoutUntil?: Prisma.DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
   passwordChangedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
+  emailVerifiedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
+  loginOtpHash?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
+  loginOtpExpires?: Prisma.DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
+  inviteTokenHash?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
+  inviteExpires?: Prisma.DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"User"> | Date | string
 }
@@ -423,6 +483,11 @@ export type UserCreateInput = {
   failedLoginAttempts?: number
   lockoutUntil?: Date | string | null
   passwordChangedAt?: Date | string | null
+  emailVerifiedAt?: Date | string | null
+  loginOtpHash?: string | null
+  loginOtpExpires?: Date | string | null
+  inviteTokenHash?: string | null
+  inviteExpires?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   employee?: Prisma.EmployeeCreateNestedOneWithoutUserInput
@@ -447,6 +512,11 @@ export type UserUncheckedCreateInput = {
   failedLoginAttempts?: number
   lockoutUntil?: Date | string | null
   passwordChangedAt?: Date | string | null
+  emailVerifiedAt?: Date | string | null
+  loginOtpHash?: string | null
+  loginOtpExpires?: Date | string | null
+  inviteTokenHash?: string | null
+  inviteExpires?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   employee?: Prisma.EmployeeUncheckedCreateNestedOneWithoutUserInput
@@ -471,6 +541,11 @@ export type UserUpdateInput = {
   failedLoginAttempts?: Prisma.IntFieldUpdateOperationsInput | number
   lockoutUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  loginOtpHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  loginOtpExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  inviteTokenHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  inviteExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   employee?: Prisma.EmployeeUpdateOneWithoutUserNestedInput
@@ -495,6 +570,11 @@ export type UserUncheckedUpdateInput = {
   failedLoginAttempts?: Prisma.IntFieldUpdateOperationsInput | number
   lockoutUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  loginOtpHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  loginOtpExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  inviteTokenHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  inviteExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   employee?: Prisma.EmployeeUncheckedUpdateOneWithoutUserNestedInput
@@ -519,6 +599,11 @@ export type UserCreateManyInput = {
   failedLoginAttempts?: number
   lockoutUntil?: Date | string | null
   passwordChangedAt?: Date | string | null
+  emailVerifiedAt?: Date | string | null
+  loginOtpHash?: string | null
+  loginOtpExpires?: Date | string | null
+  inviteTokenHash?: string | null
+  inviteExpires?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -538,6 +623,11 @@ export type UserUpdateManyMutationInput = {
   failedLoginAttempts?: Prisma.IntFieldUpdateOperationsInput | number
   lockoutUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  loginOtpHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  loginOtpExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  inviteTokenHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  inviteExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -557,6 +647,11 @@ export type UserUncheckedUpdateManyInput = {
   failedLoginAttempts?: Prisma.IntFieldUpdateOperationsInput | number
   lockoutUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  loginOtpHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  loginOtpExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  inviteTokenHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  inviteExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -576,6 +671,11 @@ export type UserCountOrderByAggregateInput = {
   failedLoginAttempts?: Prisma.SortOrder
   lockoutUntil?: Prisma.SortOrder
   passwordChangedAt?: Prisma.SortOrder
+  emailVerifiedAt?: Prisma.SortOrder
+  loginOtpHash?: Prisma.SortOrder
+  loginOtpExpires?: Prisma.SortOrder
+  inviteTokenHash?: Prisma.SortOrder
+  inviteExpires?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -599,6 +699,11 @@ export type UserMaxOrderByAggregateInput = {
   failedLoginAttempts?: Prisma.SortOrder
   lockoutUntil?: Prisma.SortOrder
   passwordChangedAt?: Prisma.SortOrder
+  emailVerifiedAt?: Prisma.SortOrder
+  loginOtpHash?: Prisma.SortOrder
+  loginOtpExpires?: Prisma.SortOrder
+  inviteTokenHash?: Prisma.SortOrder
+  inviteExpires?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -618,6 +723,11 @@ export type UserMinOrderByAggregateInput = {
   failedLoginAttempts?: Prisma.SortOrder
   lockoutUntil?: Prisma.SortOrder
   passwordChangedAt?: Prisma.SortOrder
+  emailVerifiedAt?: Prisma.SortOrder
+  loginOtpHash?: Prisma.SortOrder
+  loginOtpExpires?: Prisma.SortOrder
+  inviteTokenHash?: Prisma.SortOrder
+  inviteExpires?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -757,6 +867,11 @@ export type UserCreateWithoutEmployeeInput = {
   failedLoginAttempts?: number
   lockoutUntil?: Date | string | null
   passwordChangedAt?: Date | string | null
+  emailVerifiedAt?: Date | string | null
+  loginOtpHash?: string | null
+  loginOtpExpires?: Date | string | null
+  inviteTokenHash?: string | null
+  inviteExpires?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   interviews?: Prisma.InterviewCreateNestedManyWithoutInterviewerInput
@@ -780,6 +895,11 @@ export type UserUncheckedCreateWithoutEmployeeInput = {
   failedLoginAttempts?: number
   lockoutUntil?: Date | string | null
   passwordChangedAt?: Date | string | null
+  emailVerifiedAt?: Date | string | null
+  loginOtpHash?: string | null
+  loginOtpExpires?: Date | string | null
+  inviteTokenHash?: string | null
+  inviteExpires?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   interviews?: Prisma.InterviewUncheckedCreateNestedManyWithoutInterviewerInput
@@ -819,6 +939,11 @@ export type UserUpdateWithoutEmployeeInput = {
   failedLoginAttempts?: Prisma.IntFieldUpdateOperationsInput | number
   lockoutUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  loginOtpHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  loginOtpExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  inviteTokenHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  inviteExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   interviews?: Prisma.InterviewUpdateManyWithoutInterviewerNestedInput
@@ -842,6 +967,11 @@ export type UserUncheckedUpdateWithoutEmployeeInput = {
   failedLoginAttempts?: Prisma.IntFieldUpdateOperationsInput | number
   lockoutUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  loginOtpHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  loginOtpExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  inviteTokenHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  inviteExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   interviews?: Prisma.InterviewUncheckedUpdateManyWithoutInterviewerNestedInput
@@ -865,6 +995,11 @@ export type UserCreateWithoutInterviewsInput = {
   failedLoginAttempts?: number
   lockoutUntil?: Date | string | null
   passwordChangedAt?: Date | string | null
+  emailVerifiedAt?: Date | string | null
+  loginOtpHash?: string | null
+  loginOtpExpires?: Date | string | null
+  inviteTokenHash?: string | null
+  inviteExpires?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   employee?: Prisma.EmployeeCreateNestedOneWithoutUserInput
@@ -888,6 +1023,11 @@ export type UserUncheckedCreateWithoutInterviewsInput = {
   failedLoginAttempts?: number
   lockoutUntil?: Date | string | null
   passwordChangedAt?: Date | string | null
+  emailVerifiedAt?: Date | string | null
+  loginOtpHash?: string | null
+  loginOtpExpires?: Date | string | null
+  inviteTokenHash?: string | null
+  inviteExpires?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   employee?: Prisma.EmployeeUncheckedCreateNestedOneWithoutUserInput
@@ -927,6 +1067,11 @@ export type UserUpdateWithoutInterviewsInput = {
   failedLoginAttempts?: Prisma.IntFieldUpdateOperationsInput | number
   lockoutUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  loginOtpHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  loginOtpExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  inviteTokenHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  inviteExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   employee?: Prisma.EmployeeUpdateOneWithoutUserNestedInput
@@ -950,6 +1095,11 @@ export type UserUncheckedUpdateWithoutInterviewsInput = {
   failedLoginAttempts?: Prisma.IntFieldUpdateOperationsInput | number
   lockoutUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  loginOtpHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  loginOtpExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  inviteTokenHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  inviteExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   employee?: Prisma.EmployeeUncheckedUpdateOneWithoutUserNestedInput
@@ -973,6 +1123,11 @@ export type UserCreateWithoutAnnouncementsInput = {
   failedLoginAttempts?: number
   lockoutUntil?: Date | string | null
   passwordChangedAt?: Date | string | null
+  emailVerifiedAt?: Date | string | null
+  loginOtpHash?: string | null
+  loginOtpExpires?: Date | string | null
+  inviteTokenHash?: string | null
+  inviteExpires?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   employee?: Prisma.EmployeeCreateNestedOneWithoutUserInput
@@ -996,6 +1151,11 @@ export type UserUncheckedCreateWithoutAnnouncementsInput = {
   failedLoginAttempts?: number
   lockoutUntil?: Date | string | null
   passwordChangedAt?: Date | string | null
+  emailVerifiedAt?: Date | string | null
+  loginOtpHash?: string | null
+  loginOtpExpires?: Date | string | null
+  inviteTokenHash?: string | null
+  inviteExpires?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   employee?: Prisma.EmployeeUncheckedCreateNestedOneWithoutUserInput
@@ -1035,6 +1195,11 @@ export type UserUpdateWithoutAnnouncementsInput = {
   failedLoginAttempts?: Prisma.IntFieldUpdateOperationsInput | number
   lockoutUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  loginOtpHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  loginOtpExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  inviteTokenHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  inviteExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   employee?: Prisma.EmployeeUpdateOneWithoutUserNestedInput
@@ -1058,6 +1223,11 @@ export type UserUncheckedUpdateWithoutAnnouncementsInput = {
   failedLoginAttempts?: Prisma.IntFieldUpdateOperationsInput | number
   lockoutUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  loginOtpHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  loginOtpExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  inviteTokenHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  inviteExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   employee?: Prisma.EmployeeUncheckedUpdateOneWithoutUserNestedInput
@@ -1081,6 +1251,11 @@ export type UserCreateWithoutAuditLogsInput = {
   failedLoginAttempts?: number
   lockoutUntil?: Date | string | null
   passwordChangedAt?: Date | string | null
+  emailVerifiedAt?: Date | string | null
+  loginOtpHash?: string | null
+  loginOtpExpires?: Date | string | null
+  inviteTokenHash?: string | null
+  inviteExpires?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   employee?: Prisma.EmployeeCreateNestedOneWithoutUserInput
@@ -1104,6 +1279,11 @@ export type UserUncheckedCreateWithoutAuditLogsInput = {
   failedLoginAttempts?: number
   lockoutUntil?: Date | string | null
   passwordChangedAt?: Date | string | null
+  emailVerifiedAt?: Date | string | null
+  loginOtpHash?: string | null
+  loginOtpExpires?: Date | string | null
+  inviteTokenHash?: string | null
+  inviteExpires?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   employee?: Prisma.EmployeeUncheckedCreateNestedOneWithoutUserInput
@@ -1143,6 +1323,11 @@ export type UserUpdateWithoutAuditLogsInput = {
   failedLoginAttempts?: Prisma.IntFieldUpdateOperationsInput | number
   lockoutUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  loginOtpHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  loginOtpExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  inviteTokenHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  inviteExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   employee?: Prisma.EmployeeUpdateOneWithoutUserNestedInput
@@ -1166,6 +1351,11 @@ export type UserUncheckedUpdateWithoutAuditLogsInput = {
   failedLoginAttempts?: Prisma.IntFieldUpdateOperationsInput | number
   lockoutUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  loginOtpHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  loginOtpExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  inviteTokenHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  inviteExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   employee?: Prisma.EmployeeUncheckedUpdateOneWithoutUserNestedInput
@@ -1189,6 +1379,11 @@ export type UserCreateWithoutAiConversationsInput = {
   failedLoginAttempts?: number
   lockoutUntil?: Date | string | null
   passwordChangedAt?: Date | string | null
+  emailVerifiedAt?: Date | string | null
+  loginOtpHash?: string | null
+  loginOtpExpires?: Date | string | null
+  inviteTokenHash?: string | null
+  inviteExpires?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   employee?: Prisma.EmployeeCreateNestedOneWithoutUserInput
@@ -1212,6 +1407,11 @@ export type UserUncheckedCreateWithoutAiConversationsInput = {
   failedLoginAttempts?: number
   lockoutUntil?: Date | string | null
   passwordChangedAt?: Date | string | null
+  emailVerifiedAt?: Date | string | null
+  loginOtpHash?: string | null
+  loginOtpExpires?: Date | string | null
+  inviteTokenHash?: string | null
+  inviteExpires?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   employee?: Prisma.EmployeeUncheckedCreateNestedOneWithoutUserInput
@@ -1251,6 +1451,11 @@ export type UserUpdateWithoutAiConversationsInput = {
   failedLoginAttempts?: Prisma.IntFieldUpdateOperationsInput | number
   lockoutUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  loginOtpHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  loginOtpExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  inviteTokenHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  inviteExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   employee?: Prisma.EmployeeUpdateOneWithoutUserNestedInput
@@ -1274,6 +1479,11 @@ export type UserUncheckedUpdateWithoutAiConversationsInput = {
   failedLoginAttempts?: Prisma.IntFieldUpdateOperationsInput | number
   lockoutUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  loginOtpHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  loginOtpExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  inviteTokenHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  inviteExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   employee?: Prisma.EmployeeUncheckedUpdateOneWithoutUserNestedInput
@@ -1355,6 +1565,11 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   failedLoginAttempts?: boolean
   lockoutUntil?: boolean
   passwordChangedAt?: boolean
+  emailVerifiedAt?: boolean
+  loginOtpHash?: boolean
+  loginOtpExpires?: boolean
+  inviteTokenHash?: boolean
+  inviteExpires?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   employee?: boolean | Prisma.User$employeeArgs<ExtArgs>
@@ -1380,6 +1595,11 @@ export type UserSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   failedLoginAttempts?: boolean
   lockoutUntil?: boolean
   passwordChangedAt?: boolean
+  emailVerifiedAt?: boolean
+  loginOtpHash?: boolean
+  loginOtpExpires?: boolean
+  inviteTokenHash?: boolean
+  inviteExpires?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["user"]>
@@ -1399,6 +1619,11 @@ export type UserSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   failedLoginAttempts?: boolean
   lockoutUntil?: boolean
   passwordChangedAt?: boolean
+  emailVerifiedAt?: boolean
+  loginOtpHash?: boolean
+  loginOtpExpires?: boolean
+  inviteTokenHash?: boolean
+  inviteExpires?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["user"]>
@@ -1418,11 +1643,16 @@ export type UserSelectScalar = {
   failedLoginAttempts?: boolean
   lockoutUntil?: boolean
   passwordChangedAt?: boolean
+  emailVerifiedAt?: boolean
+  loginOtpHash?: boolean
+  loginOtpExpires?: boolean
+  inviteTokenHash?: boolean
+  inviteExpires?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "email" | "password" | "firstName" | "lastName" | "role" | "avatarUrl" | "isActive" | "refreshToken" | "passwordResetOtp" | "passwordResetOtpExpires" | "failedLoginAttempts" | "lockoutUntil" | "passwordChangedAt" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
+export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "email" | "password" | "firstName" | "lastName" | "role" | "avatarUrl" | "isActive" | "refreshToken" | "passwordResetOtp" | "passwordResetOtpExpires" | "failedLoginAttempts" | "lockoutUntil" | "passwordChangedAt" | "emailVerifiedAt" | "loginOtpHash" | "loginOtpExpires" | "inviteTokenHash" | "inviteExpires" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
 export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   employee?: boolean | Prisma.User$employeeArgs<ExtArgs>
   interviews?: boolean | Prisma.User$interviewsArgs<ExtArgs>
@@ -1458,6 +1688,11 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     failedLoginAttempts: number
     lockoutUntil: Date | null
     passwordChangedAt: Date | null
+    emailVerifiedAt: Date | null
+    loginOtpHash: string | null
+    loginOtpExpires: Date | null
+    inviteTokenHash: string | null
+    inviteExpires: Date | null
     createdAt: Date
     updatedAt: Date
   }, ExtArgs["result"]["user"]>
@@ -1902,6 +2137,11 @@ export interface UserFieldRefs {
   readonly failedLoginAttempts: Prisma.FieldRef<"User", 'Int'>
   readonly lockoutUntil: Prisma.FieldRef<"User", 'DateTime'>
   readonly passwordChangedAt: Prisma.FieldRef<"User", 'DateTime'>
+  readonly emailVerifiedAt: Prisma.FieldRef<"User", 'DateTime'>
+  readonly loginOtpHash: Prisma.FieldRef<"User", 'String'>
+  readonly loginOtpExpires: Prisma.FieldRef<"User", 'DateTime'>
+  readonly inviteTokenHash: Prisma.FieldRef<"User", 'String'>
+  readonly inviteExpires: Prisma.FieldRef<"User", 'DateTime'>
   readonly createdAt: Prisma.FieldRef<"User", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"User", 'DateTime'>
 }

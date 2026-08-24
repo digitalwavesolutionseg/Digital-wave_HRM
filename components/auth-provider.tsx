@@ -31,6 +31,9 @@ interface AuthContextValue {
   user: AuthUser | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
+  loginWithOtp: (email: string, otp: string) => Promise<void>;
+  verifySignup: (email: string, otp: string) => Promise<void>;
+  acceptInvite: (token: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
 }
@@ -77,6 +80,51 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [router]
   );
 
+  const completeLogin = useCallback(
+    (data: { accessToken: string; refreshToken: string; user: AuthUser }) => {
+      setTokens(data.accessToken, data.refreshToken);
+      setUser(data.user);
+      router.push("/");
+    },
+    [router]
+  );
+
+  const loginWithOtp = useCallback(
+    async (email: string, otp: string) => {
+      const data = await api.post<{
+        accessToken: string;
+        refreshToken: string;
+        user: AuthUser;
+      }>("/auth/verify-login-otp", { email, otp });
+      completeLogin(data);
+    },
+    [completeLogin]
+  );
+
+  const verifySignup = useCallback(
+    async (email: string, otp: string) => {
+      const data = await api.post<{
+        accessToken: string;
+        refreshToken: string;
+        user: AuthUser;
+      }>("/auth/verify-email", { email, otp });
+      completeLogin(data);
+    },
+    [completeLogin]
+  );
+
+  const acceptInvite = useCallback(
+    async (token: string, password: string) => {
+      const data = await api.post<{
+        accessToken: string;
+        refreshToken: string;
+        user: AuthUser;
+      }>("/auth/accept-invite", { token, password });
+      completeLogin(data);
+    },
+    [completeLogin]
+  );
+
   const logout = useCallback(async () => {
     try {
       await api.post<{ success: boolean }>("/auth/logout");
@@ -106,8 +154,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [router]);
 
   const value = useMemo(
-    () => ({ user, loading, login, logout, refresh }),
-    [user, loading, login, logout, refresh]
+    () => ({ user, loading, login, loginWithOtp, verifySignup, acceptInvite, logout, refresh }),
+    [user, loading, login, loginWithOtp, verifySignup, acceptInvite, logout, refresh]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

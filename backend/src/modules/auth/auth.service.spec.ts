@@ -13,6 +13,7 @@ function makeUser(overrides: Partial<Record<string, unknown>> = {}) {
     lastName: "User",
     role: "SUPER_ADMIN",
     isActive: true,
+    emailVerifiedAt: new Date(),
     refreshToken: null,
     failedLoginAttempts: 0,
     lockoutUntil: null,

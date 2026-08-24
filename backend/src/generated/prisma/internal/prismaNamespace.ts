@@ -2120,6 +2120,11 @@ export const UserScalarFieldEnum = {
   failedLoginAttempts: 'failedLoginAttempts',
   lockoutUntil: 'lockoutUntil',
   passwordChangedAt: 'passwordChangedAt',
+  emailVerifiedAt: 'emailVerifiedAt',
+  loginOtpHash: 'loginOtpHash',
+  loginOtpExpires: 'loginOtpExpires',
+  inviteTokenHash: 'inviteTokenHash',
+  inviteExpires: 'inviteExpires',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
