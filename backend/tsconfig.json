@@ -19,7 +19,7 @@
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": false,
     "resolveJsonModule": true,
-    "types": ["node", "jest"],
-    "exclude": ["node_modules", "dist", "scripts"]
-  }
+    "types": ["node", "jest"]
+  },
+  "exclude": ["node_modules", "dist", "scripts"]
 }

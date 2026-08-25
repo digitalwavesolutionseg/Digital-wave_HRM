@@ -16,6 +16,7 @@ import {
   PlugZap,
   Trash2,
   UserPlus,
+  Lock,
 } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/ui/page-header";
@@ -36,6 +37,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { DataTable } from "@/components/ui/data-table";
 import type { ColumnDef } from "@tanstack/react-table";
+import { useAuth } from "@/components/auth-provider";
 import { cn } from "@/lib/utils";
 
 type SectionId =
@@ -47,7 +49,8 @@ type SectionId =
   | "branding"
   | "permissions"
   | "notifications"
-  | "ai";
+  | "ai"
+  | "security";
 
 const sections: { id: SectionId; label: string; icon: React.ReactNode }[] = [
   { id: "company", label: "Company Settings", icon: <Building2 className="h-4 w-4" /> },
@@ -59,6 +62,7 @@ const sections: { id: SectionId; label: string; icon: React.ReactNode }[] = [
   { id: "permissions", label: "Permissions", icon: <Shield className="h-4 w-4" /> },
   { id: "notifications", label: "Notifications", icon: <Bell className="h-4 w-4" /> },
   { id: "ai", label: "AI Assistant", icon: <Sparkles className="h-4 w-4" /> },
+  { id: "security", label: "Account Security", icon: <Lock className="h-4 w-4" /> },
 ];
 
 const ROLE_LABELS: Record<string, string> = {
@@ -169,6 +173,9 @@ export default function SettingsPage() {
   const [inviteOpen, setInviteOpen] = React.useState(false);
   const [inviteForm, setInviteForm] = React.useState({ email: "", firstName: "", lastName: "", role: "EMPLOYEE" });
   const [inviting, setInviting] = React.useState(false);
+  const [pwForm, setPwForm] = React.useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
+  const [pwSaving, setPwSaving] = React.useState(false);
+  const { logout } = useAuth();
 
   React.useEffect(() => {
     let cancelled = false;
@@ -335,8 +342,30 @@ export default function SettingsPage() {
     }
   };
 
-  const submitInvite = async (e: React.FormEvent) => {
+  const submitChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (pwForm.newPassword !== pwForm.confirmPassword) {
+      toast.error("New passwords do not match");
+      return;
+    }
+    setPwSaving(true);
+    try {
+      const { api } = await import("@/lib/api");
+      await api.post("/auth/change-password", {
+        currentPassword: pwForm.currentPassword,
+        newPassword: pwForm.newPassword,
+      });
+      toast.success("Password changed. Please sign in again.");
+      setPwForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+      setTimeout(() => void logout(), 1200);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not change password");
+    } finally {
+      setPwSaving(false);
+    }
+  };
+
+  const submitInvite = async (e: React.FormEvent) => {    e.preventDefault();
     setInviting(true);
     try {
       const { api } = await import("@/lib/api");
@@ -741,6 +770,51 @@ export default function SettingsPage() {
                   </div>
                 </div>
               </CardContent>
+            </Card>
+          )}
+
+          {active === "security" && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Account Security</CardTitle>
+                <CardDescription>
+                  Change your password. All other sessions will be signed out for security.
+                </CardDescription>
+              </CardHeader>
+              <form className="grid gap-5 p-6 sm:max-w-md" onSubmit={submitChangePassword}>
+                <FormField label="Current Password">
+                  <Input
+                    type="password"
+                    autoComplete="current-password"
+                    value={pwForm.currentPassword}
+                    onChange={(e) => setPwForm((f) => ({ ...f, currentPassword: e.target.value }))}
+                    required
+                  />
+                </FormField>
+                <FormField label="New Password" hint="At least 10 characters with uppercase, lowercase, a digit and a symbol.">
+                  <Input
+                    type="password"
+                    autoComplete="new-password"
+                    value={pwForm.newPassword}
+                    onChange={(e) => setPwForm((f) => ({ ...f, newPassword: e.target.value }))}
+                    required
+                  />
+                </FormField>
+                <FormField label="Confirm New Password">
+                  <Input
+                    type="password"
+                    autoComplete="new-password"
+                    value={pwForm.confirmPassword}
+                    onChange={(e) => setPwForm((f) => ({ ...f, confirmPassword: e.target.value }))}
+                    required
+                  />
+                </FormField>
+                <div>
+                  <Button type="submit" disabled={pwSaving}>
+                    <Lock className="h-4 w-4" /> {pwSaving ? "Updating..." : "Change Password"}
+                  </Button>
+                </div>
+              </form>
             </Card>
           )}
 

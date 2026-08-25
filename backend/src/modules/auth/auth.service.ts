@@ -101,6 +101,10 @@ export class AuthService {
     return { devOtp: otp };
   }
 
+  private hashToken(token: string): string {
+    return createHash("sha256").update(token).digest("hex");
+  }
+
   private async issueTokens(user: {
     id: string;
     email: string;
@@ -110,7 +114,7 @@ export class AuthService {
     const tokens = await this.generateTokens(user.id, user.email, user.role);
     await this.prisma.user.update({
       where: { id: user.id },
-      data: { refreshToken: tokens.refreshToken },
+      data: { refreshToken: this.hashToken(tokens.refreshToken) },
     });
     return {
       accessToken: tokens.accessToken,
@@ -272,7 +276,7 @@ export class AuthService {
     const tokens = await this.generateTokens(user.id, user.email, user.role);
     await this.prisma.user.update({
       where: { id: user.id },
-      data: { refreshToken: tokens.refreshToken },
+      data: { refreshToken: this.hashToken(tokens.refreshToken) },
     });
 
     return {
@@ -352,13 +356,17 @@ export class AuthService {
         secret: process.env.JWT_REFRESH_SECRET,
       });
       const user = await this.prisma.user.findUnique({ where: { id: payload.sub } });
-      if (!user || user.refreshToken !== dto.refreshToken) {
+      const tokenMatches =
+        user &&
+        (user.refreshToken === this.hashToken(dto.refreshToken) ||
+          user.refreshToken === dto.refreshToken);
+      if (!user || !tokenMatches) {
         throw new UnauthorizedException("Invalid refresh token");
       }
       const tokens = await this.generateTokens(user.id, user.email, user.role);
       await this.prisma.user.update({
         where: { id: user.id },
-        data: { refreshToken: tokens.refreshToken },
+        data: { refreshToken: this.hashToken(tokens.refreshToken) },
       });
       return {
         accessToken: tokens.accessToken,
